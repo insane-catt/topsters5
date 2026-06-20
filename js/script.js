@@ -122,13 +122,9 @@ function getAlbums() {
  */
 function chartToImage(ext) {
   const container = document.getElementById('chartContainer');
-  const savedZoom = container.style.zoom || '';
-
-  // Reset zoom to 1 so capture is always at natural size
-  container.style.zoom = '1';
   container.style.border = 'none';
 
-  // Explicitly set tile heights — html2canvas 1.3.x ignores CSS aspect-ratio
+  // Set explicit tile heights — html2canvas 1.3.x ignores CSS aspect-ratio
   const tiles = $('#chart img.tile');
   if (tiles.length) {
     const sz = tiles[0].offsetWidth;
@@ -136,7 +132,6 @@ function chartToImage(ext) {
   }
 
   html2canvas(container, { useCORS: true, scale: 1 }).then((canvas) => {
-    container.style.zoom = savedZoom;
     container.style.border = '1px solid white';
     tiles.css('height', '');
 
@@ -172,17 +167,6 @@ function mobileTab(panel) {
   }
 }
 
-/**
- * Counteract browser zoom on the chart container so chart stays fixed size
- */
-function updateChartScale() {
-  try {
-    const z = window.outerWidth / window.innerWidth;
-    if (z > 0.1 && z < 10) {
-      document.getElementById('chartContainer').style.zoom = (1 / z);
-    }
-  } catch (e) {}
-}
 
 /**
  * Add custom image URL to results as a draggable element
@@ -782,6 +766,5 @@ $(() => {
 
   $('#imgImportURLDiv').hide();
   $('#imgImportFileRadio').prop('checked', true);
-  window.onresize = function () { resize(); updateChartScale(); };
-  updateChartScale();
+  window.onresize = resize;
 });
