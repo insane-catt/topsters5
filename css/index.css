@@ -7942,15 +7942,15 @@ input[type=radio] {
     font-size: 0.7rem;
     padding: 2px 6px; }
 
-  /* Scroll wrapper fills remaining space; horizontal scroll only.
-     overflow-y: hidden prevents vertical overscroll bounce (pull-to-refresh). */
+  /* Scroll wrapper: horizontal + vertical scroll for tall charts.
+     overscroll-behavior: none prevents pull-to-refresh bounce at the top edge. */
   #chartScrollWrapper {
     flex: 1;
     min-height: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: auto;
     -webkit-overflow-scrolling: touch;
-    touch-action: pan-x pinch-zoom; }
+    touch-action: pan-x pan-y pinch-zoom;
+    overscroll-behavior: none; }
 
   aside {
     order: 2;

@@ -763,7 +763,9 @@ function chartSize() {
  * Change amount of tiles when in collage mode
  */
 function chartLength() {
-  chart.options.length = $('#tiles').val();
+  const val = Math.min(100, Math.max(1, parseInt($('#tiles').val()) || 1));
+  $('#tiles').val(val);
+  chart.options.length = val;
   generateChart();
 }
 
