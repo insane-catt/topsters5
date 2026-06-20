@@ -67,15 +67,15 @@ function updateTitlesHeight() {
   }
 
   // Collage mode + titles visible: shrink each input to its actual rendered text width,
-  // then shrink #chartContainer so there is no trailing black to the right of the text.
+  // then set #chartContainer to exactly chart width + longest title width.
+  // On mobile this may exceed the viewport — the parent scroll wrapper handles overflow.
   if (chart && !chart.options.grid && chart.options.titles && n > 0) {
     const containerEl = document.getElementById('chartContainer');
     const chartEl = document.getElementById('chart');
-    const mainEl = containerEl.parentElement;
-    const mainStyle = getComputedStyle(mainEl);
-    const mainW = mainEl.clientWidth
-      - (parseFloat(mainStyle.paddingLeft) || 0)
-      - (parseFloat(mainStyle.paddingRight) || 0);
+
+    // Override any CSS flex constraint on #titles (e.g. mobile 28% rule)
+    titlesEl.style.flex = '0 0 auto';
+    titlesEl.style.maxWidth = 'none';
 
     // Canvas text measurement uses the same font as the browser renders
     const canvasCtx = document.createElement('canvas').getContext('2d');
@@ -93,7 +93,11 @@ function updateTitlesHeight() {
       if (tw > maxTextW) maxTextW = tw;
     });
 
-    containerEl.style.width = Math.min(chartW + maxTextW + padRight, mainW) + 'px';
+    containerEl.style.width = (chartW + maxTextW + padRight) + 'px';
+  } else if (chart) {
+    // Grid mode or titles hidden: let CSS control #titles flex (restore override)
+    titlesEl.style.flex = '';
+    titlesEl.style.maxWidth = '';
   }
 }
 
