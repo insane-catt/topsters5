@@ -127,19 +127,6 @@ function chartToImage(ext) {
   html2canvas(document.getElementById('chartContainer'), {
     useCORS: true
   }).then((canvas) => {
-    let context = canvas.getContext('2d');
-    let images = $('#chart img');
-
-    for (let i = 0; i < images.length; i++) {
-      if (chart.sources[i] !== 'assets/images/blank.png') {
-        let img = new Image();
-        img.src = chart.sources[i];
-        let x = $(images[i]).position().left;
-        let y = $(images[i]).position().top;
-        context.drawImage(img, x, y);
-      }
-    }
-
     const mimeType = ext === 'jpg' ? 'image/jpeg' : 'image/png';
     const filename = (chart.name || 'chart') + '.' + ext;
     canvas.toBlob((blob) => {
