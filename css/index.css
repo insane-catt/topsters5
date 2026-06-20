@@ -7983,13 +7983,25 @@ input[type=radio] {
 
   .mobile-panel.mobile-panel-active {
     display: flex;
-    flex-direction: column; }
+    flex-direction: column;
+    min-height: 0; }
 
   #results {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    align-content: start;
     max-height: none;
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch; }
+
+  #results img {
+    width: 100%;
+    height: auto !important;
+    aspect-ratio: 1;
+    object-fit: cover; }
 
   #titles {
     font-size: 0.5em;
