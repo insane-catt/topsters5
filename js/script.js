@@ -162,6 +162,7 @@ function getAlbums() {
  */
 function chartToImage(ext) {
   const container = document.getElementById('chartContainer');
+  const origContainerWidth = container.style.width;
   container.style.border = 'none';
   container.scrollTop = 0;
 
@@ -172,8 +173,16 @@ function chartToImage(ext) {
     if (w > 0) $(this).css('height', w + 'px');
   });
 
+  // Shrink container to exactly chart+titles width — eliminates excess black on the right.
+  // flex-grow-1 on #chart keeps tiles at the same size after the container narrows.
+  const chartEl = document.getElementById('chart');
+  const titlesEl = document.getElementById('titles');
+  const captureW = chartEl.offsetWidth + (titlesEl ? titlesEl.offsetWidth : 0);
+  container.style.width = captureW + 'px';
+
   html2canvas(container, { useCORS: true, scale: window.devicePixelRatio || 1, backgroundColor: '#000000' }).then((canvas) => {
     container.style.border = '1px solid white';
+    container.style.width = origContainerWidth;
     tiles.css('height', '');
 
     const mimeType = ext === 'jpg' ? 'image/jpeg' : 'image/png';
