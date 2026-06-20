@@ -280,19 +280,6 @@ function getDisplayWidth(str) {
 /**
  * Rearranges the artwork and titles for visible chart
  */
-/**
- * Set all .title inputs to the same width — the widest title, capped at 13em.
- * Uniform width prevents the column from expanding with individual long names.
- */
-function syncTitleColumnWidth() {
-  const MAX_EM = 13;
-  let maxW = 0;
-  $('.title').each(function () {
-    maxW = Math.max(maxW, getDisplayWidth(this.value) * 0.55 + 1);
-  });
-  $('.title').css('width', Math.min(maxW, MAX_EM) + 'em');
-}
-
 function repaintChart() {
   let images = $('#chart img');
   for (let i = 0; i < images.length; i++) {
@@ -308,15 +295,16 @@ function repaintChart() {
       input.type = 'text';
       input.className = 'title';
       input.value = chart.titles[i];
+      let w = getDisplayWidth(input.value);
+      input.style.width = (w * 0.55 + 1) + 'em';
       $(input).change((e) => {
         chart.titles[$('.title').index(e.target)] = e.target.value;
-        syncTitleColumnWidth();
-        updateTitlesHeight();
+        let dw = getDisplayWidth(e.target.value);
+        e.target.style.width = (dw * 0.55 + 1) + 'em';
       });
       $('#titles').append(input);
     }
   }
-  syncTitleColumnWidth();
 
   if ($('#chartContainer').height() > height && !maxHeight) {
     $('#chart').css({ maxHeight: height });

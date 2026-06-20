@@ -7854,8 +7854,7 @@ main {
 #titles {
   display: flex;
   flex-direction: column;
-  font-size: 0.8em;
-  max-width: 28%; }
+  font-size: 0.8em; }
 
 .title {
   background: transparent;
