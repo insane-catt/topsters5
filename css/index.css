@@ -7991,7 +7991,7 @@ input[type=radio] {
   #results {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
+    gap: 24px;
     padding: 4px;
     overflow: visible !important; }
 
