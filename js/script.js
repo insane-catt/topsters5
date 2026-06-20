@@ -909,19 +909,26 @@ $(() => {
   $('#imgImportFileRadio').prop('checked', true);
   window.onresize = resize;
 
-  // On mobile: prevent pull-to-refresh and iOS URL-bar collapse when overscrolling
-  // at the top of the chart scroll wrapper. Without this, a downward swipe at
-  // scrollTop=0 triggers the URL bar to appear, which shrinks the vh-based layout.
-  const chartScrollWrapper = document.getElementById('chartScrollWrapper');
-  if (chartScrollWrapper) {
-    let touchStartY = 0;
-    chartScrollWrapper.addEventListener('touchstart', function (e) {
-      touchStartY = e.touches[0].clientY;
-    }, { passive: true });
-    chartScrollWrapper.addEventListener('touchmove', function (e) {
-      if (this.scrollTop === 0 && e.touches[0].clientY > touchStartY) {
-        e.preventDefault();
-      }
-    }, { passive: false });
+  // On mobile: lock main/aside heights to pixel values captured at init time.
+  // iOS Safari fires a resize event and changes window.innerHeight whenever the
+  // URL bar shows or hides (during pull-to-refresh, drag start, etc.), which makes
+  // vh-based heights shrink. Fixing to px once avoids this — URL bar height changes
+  // are height-only (width stays the same), so we only re-lock on orientation change.
+  function lockMobileHeights() {
+    if (window.innerWidth > 767) return;
+    const h = window.innerHeight;
+    const mainEl = document.querySelector('main');
+    const asideEl = document.querySelector('aside');
+    if (mainEl) {
+      mainEl.style.height = Math.floor(h * 0.55) + 'px';
+      mainEl.style.maxHeight = Math.floor(h * 0.55) + 'px';
+    }
+    if (asideEl) {
+      asideEl.style.height = Math.floor(h * 0.45) + 'px';
+    }
   }
+  lockMobileHeights();
+  window.addEventListener('orientationchange', function () {
+    setTimeout(lockMobileHeights, 300);
+  });
 });
