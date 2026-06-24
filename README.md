@@ -1,21 +1,17 @@
-# ChartYourMusic
+# Topsters5
 
-This project was inspired by [neverendingchartrendering.org](neverendingchartrendering.org). It was created as an open source alternative to the site with additional features and better support. The app is still very open to further development and will likely improve even further in the future. Contributions are appreciated and encouraged.
+> **Work in Progress** — This is an unofficial development preview. No formal release has been made yet.
 
-The site is up and running [here](https://giraffekey.github.io/chartyourmusic/).
+A fork of [GiraffeKey's ChartYourMusic](https://github.com/GiraffeKey/chartyourmusic), with added mobile support and other improvements.
 
-## Contributing
+The development preview is available [here](https://insane-catt.github.io/chartyourmusic/).
 
-There are multiple things you can help with, such as:
+## Changes from the original
 
-- Fixing issues and bugs
-- Refactoring the codebase
-- Improving the look and style of the app
-- Adding new features and enhancements
-- Improving code performance
-
-Just fork the repo and get working!  
-Don't want to program? Also consider opening up [issues](https://github.com/GiraffeKey/chartyourmusic/issues) for any bug notifications or suggested features.
+- **Mobile scroll**: Swipe anywhere in the chart area to scroll — tiles no longer capture the gesture
+- **Long-press drag on mobile**: Hold a tile for ~400ms to pick it up and drag it into a new position; a quick swipe scrolls instead
+- **Vertical scroll for large charts**: Charts with many tiles scroll vertically within the chart area without resizing the layout
+- **100-tile collage layout**: Tile size tiers are tuned for 100-tile charts so each tier spans a consistent number of rows
 
 ## Importing from RateYourMusic
 
