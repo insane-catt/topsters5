@@ -204,89 +204,49 @@ function getAlbums() {
 }
 
 /**
- * Takes a screenshot of #chart and downloads it as an image
+ * Sends chart data to the server and downloads the generated image
  * @param {String} ext - png or jpg
  */
-function chartToImage(ext) {
-  const container = document.getElementById('chartContainer');
-  const chartEl = document.getElementById('chart');
-  const titlesEl = document.getElementById('titles');
-  const origContainerWidth = container.style.width;
-  const origContainerHeight = container.style.height;
-  container.style.border = 'none';
-  container.scrollTop = 0;
+async function chartToImage(ext) {
+  const tileCount = chart.options.grid
+    ? chart.options.rows * chart.options.cols
+    : chart.options.length;
 
-  // On mobile #chartContainer has flex:1 and grows taller than its tile content,
-  // leaving a large black strip below. Pin the container height to the tile area.
-  const contentH = chartEl.offsetHeight;
-  if (contentH > 0) container.style.height = contentH + 'px';
-
-  // Set each tile's height = its own width (html2canvas 1.3.x ignores aspect-ratio)
-  const tiles = $('#chart img.tile');
-  tiles.each(function () {
-    const w = this.offsetWidth;
-    if (w > 0) $(this).css('height', w + 'px');
+  const sources = chart.sources.slice(0, tileCount).map(src => {
+    if (!src || src.includes('blank.png') || src.startsWith('assets/')) return '';
+    if (/^https?:\/\//.test(src)) return src;
+    return new URL(src, window.location.href).href;
   });
 
-  // Padding values to restore as margins after cropping
-  const titlesRightPad = (titlesEl && titlesEl.offsetWidth > 0)
-    ? parseFloat(getComputedStyle(titlesEl).paddingRight) || 0
-    : 0;
-  const chartBottomPad = parseFloat(getComputedStyle(chartEl).paddingBottom) || 0;
+  const payload = {
+    chart: {
+      name: chart.name,
+      sources,
+      titles: chart.titles.slice(0, tileCount),
+      options: Object.assign({}, chart.options)
+    },
+    format: ext
+  };
 
-  html2canvas(container, { useCORS: true, scale: window.devicePixelRatio || 1, backgroundColor: '#000000' }).then((rawCanvas) => {
-    container.style.border = '1px solid white';
-    container.style.width = origContainerWidth;
-    container.style.height = origContainerHeight;
-    tiles.css('height', '');
-
-    // Crop any trailing black from the right and bottom edges of the canvas.
-    const scale = window.devicePixelRatio || 1;
-    const W = rawCanvas.width, H = rawCanvas.height;
-    const pixels = rawCanvas.getContext('2d').getImageData(0, 0, W, H).data;
-
-    function hasContent(x, y) {
-      const i = (y * W + x) * 4;
-      return pixels[i] > 4 || pixels[i + 1] > 4 || pixels[i + 2] > 4;
-    }
-
-    let rightEdge = W;
-    scanRight: for (let x = W - 1; x >= 0; x--) {
-      for (let y = 0; y < H; y++) {
-        if (hasContent(x, y)) { rightEdge = x + 1; break scanRight; }
-      }
-    }
-    rightEdge = Math.min(rightEdge + Math.ceil(titlesRightPad * scale), W);
-
-    let bottomEdge = H;
-    scanBottom: for (let y = H - 1; y >= 0; y--) {
-      for (let x = 0; x < W; x++) {
-        if (hasContent(x, y)) { bottomEdge = y + 1; break scanBottom; }
-      }
-    }
-    bottomEdge = Math.min(bottomEdge + Math.ceil(chartBottomPad * scale), H);
-
-    let canvas = rawCanvas;
-    if (rightEdge < W || bottomEdge < H) {
-      canvas = document.createElement('canvas');
-      canvas.width = rightEdge;
-      canvas.height = bottomEdge;
-      canvas.getContext('2d').drawImage(rawCanvas, 0, 0);
-    }
-
-    const mimeType = ext === 'jpg' ? 'image/jpeg' : 'image/png';
-    const filename = (chart.name || 'chart') + '.' + ext;
-    canvas.toBlob((blob) => {
-      let url = URL.createObjectURL(blob);
-      let a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, mimeType);
-  });
+  try {
+    const resp = await fetch('/api/generate-chart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!resp.ok) throw new Error('Server error ' + resp.status);
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (chart.name || 'chart') + '.' + ext;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert('画像の生成に失敗しました: ' + e.message);
+  }
 }
 
 /**
