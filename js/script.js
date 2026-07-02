@@ -119,7 +119,7 @@ function updateTitlesHeight() {
  * @param {String} url
  * @param {Function} success
  */
-function fetch(url, success) {
+function xhrGet(url, success) {
   let http = new XMLHttpRequest();
   http.onreadystatechange = function () {
     if (this.readyState == 4 && this.status == 200) {
@@ -157,13 +157,13 @@ function getAlbums() {
     (album && artist ? ' AND ' : '') +
     (artist ? 'artist:' + artist : '');
   // Retrieve list of albums that match the search input
-  fetch(
+  xhrGet(
     `https://musicbrainz.org/ws/2/release?query=${query}&limit=40?inc=artist-credit&fmt=json`,
     (resp) => {
       let releases = JSON.parse(resp).releases;
       for (let i = 0; i < releases.length; i++) {
         let rel = releases[i];
-        fetch('https://coverartarchive.org/release/' + rel['id'], (resp) => {
+        xhrGet('https://coverartarchive.org/release/' + rel['id'], (resp) => {
           JSON.parse(resp).images.forEach((image) => {
             let source = image['image'].replace('http:/', 'https:/');
             if (!sourceList.includes(source)) {
@@ -604,7 +604,7 @@ function exportToJSON() {
  * Import chart data from file
  */
 function importFromJSON() {
-  fetch(URL.createObjectURL($('#jsonImport').get(0).files[0]), (resp) => {
+  xhrGet(URL.createObjectURL($('#jsonImport').get(0).files[0]), (resp) => {
     charts.push(JSON.parse(resp));
     $(chartItemString(charts[charts.length - 1].name)).insertBefore(
       '#createChart'
@@ -617,7 +617,7 @@ function importFromJSON() {
  * Generate chart images from RateYourMusic data
  */
 function importFromRYM() {
-  fetch(URL.createObjectURL($('#csvImport').get(0).files[0]), (resp) => {
+  xhrGet(URL.createObjectURL($('#csvImport').get(0).files[0]), (resp) => {
     resp = resp.replace(/""/g, '0');
     resp = resp.replace(
       'RYM Album, First Name,Last Name,First Name localized, Last Name localized,Title,Release_Date,Rating,Ownership,Purchase Date,Media Type,Review',
@@ -636,7 +636,7 @@ function importFromRYM() {
         (obj.First_Name == 0 ? '' : obj.First_Name + ' ') + obj.Last_Name;
       let query = 'release:' + obj.Title + ' AND artist:' + artist;
       window.setTimeout(
-        fetch,
+        xhrGet,
         1000 * i,
         `https://musicbrainz.org/ws/2/release?query=${query}&limit=40?inc=artist-credit&fmt=json`,
         (resp) => {
@@ -644,7 +644,7 @@ function importFromRYM() {
             (release) => release.title == obj.Title
           );
           if (release) {
-            fetch(
+            xhrGet(
               'https://coverartarchive.org/release/' + release['id'],
               (resp) => {
                 let index = chart.sources.indexOf('assets/images/blank.png');
