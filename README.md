@@ -6,9 +6,17 @@
 
 A fork of [GiraffeKey's ChartYourMusic](https://github.com/GiraffeKey/chartyourmusic), with added mobile support and other improvements.
 
-[GiraffeKey の ChartYourMusic](https://github.com/GiraffeKey/chartyourmusic) をベースに、モバイル対応などの改善を加えたフォークです。
+[GiraffeKeyさん の ChartYourMusic](https://github.com/GiraffeKey/chartyourmusic) をベースに、モバイル対応などの改善を加えたフォークです。
 
 The development preview is available here / 開発中プレビューはこちら: <https://topsters5.vercel.app/>
+
+---
+
+## Contributing / コントリビュート
+
+Contributions are welcome! If you find a bug or have an idea for a new feature, feel free to open an [Issue](https://github.com/insane-catt/topsters5/issues) or submit a [Pull Request](https://github.com/insane-catt/topsters5/pulls).
+
+バグ報告や機能提案など、開発のお手伝いをしてくださる方を歓迎します。お気軽に [Issue](https://github.com/insane-catt/topsters5/issues) や [Pull Request](https://github.com/insane-catt/topsters5/pulls) をお送りください。
 
 ---
 
