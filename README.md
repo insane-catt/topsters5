@@ -8,7 +8,7 @@ A fork of [GiraffeKey's ChartYourMusic](https://github.com/GiraffeKey/chartyourm
 
 [GiraffeKey の ChartYourMusic](https://github.com/GiraffeKey/chartyourmusic) をベースに、モバイル対応などの改善を加えたフォークです。
 
-The development preview is available here / 開発中プレビューはこちら: <https://insane-catt.github.io/topsters5/>
+The development preview is available here / 開発中プレビューはこちら: <https://topsters5.vercel.app/>
 
 ---
 
