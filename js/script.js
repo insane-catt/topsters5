@@ -337,10 +337,35 @@ function addCustomImage() {
   let img = document.createElement('img');
   img.src = url;
   img.title = title;
-  img.className = 'result';
+  img.className = 'result custom-preview';
   makeResultDraggable(img);
   $(img).css({ height: $('#results').width() / 2 });
   $('#results').append(img);
+}
+
+/**
+ * Live preview for the Custom Image fields: as soon as a URL is present and any
+ * of the three inputs (URL / Artist / Album) is focused or edited, show the
+ * image in the results so it can be dragged onto the chart without clicking
+ * Search. The image is only (re)loaded when the URL changes — editing the
+ * artist/album just refreshes the drag title on the existing preview.
+ */
+function previewCustomImage() {
+  let url = $('#customImageURL').val().trim();
+  if (!url) {
+    $('#results').find('img.custom-preview').remove();
+    return;
+  }
+  let artist = $('#customArtist').val().trim();
+  let album = $('#customAlbum').val().trim();
+  let title = [artist, album].filter(Boolean).join(' - ');
+
+  let existing = $('#results').find('img.custom-preview');
+  if (existing.length && existing.attr('src') === url) {
+    existing.attr('title', title);
+    return;
+  }
+  addCustomImage();
 }
 
 /**
@@ -1139,6 +1164,10 @@ $(() => {
   $('#imgImportURLDiv').hide();
   $('#imgImportFileRadio').prop('checked', true);
   window.onresize = resize;
+
+  // Custom Image: preview the URL image whenever a URL is present and any of the
+  // three fields is focused or edited (no need to click Search).
+  $('#customImageURL, #customArtist, #customAlbum').on('focus input', previewCustomImage);
 
   if ('ontouchstart' in window) setupTileLongPressDrag();
 });
