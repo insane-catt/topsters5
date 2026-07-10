@@ -42,65 +42,60 @@ function resize() {
 function updateTitlesHeight() {
   const $titles = $('#titles');
   const titlesEl = $titles[0];
-  const chartH = document.getElementById('chart').offsetHeight;
+  const chartEl = document.getElementById('chart');
+  const chartH = chartEl.offsetHeight;
   if (chartH <= 0) return;
 
-  $titles.css('height', chartH + 'px');
-  const $items = $titles.find('.title, .title-placeholder');
+  $titles.css({ height: chartH + 'px', position: 'relative' });
+
+  const $items = $titles.find('.title');
   const n = $items.length;
   if (n === 0) return;
 
   const style = getComputedStyle(titlesEl);
   const pt = parseFloat(style.paddingTop) || 0;
-  const pb = parseFloat(style.paddingBottom) || 0;
   const fs = parseFloat(style.fontSize) || 12;
-  const contentH = chartH - pt - pb;
-  const slotH = contentH / n;
 
   $titles.css('justify-content', 'flex-start');
-  if (slotH >= 8) {
-    // Each title gets an equal slice — first aligns with first tile, last with last tile
-    $items.css('height', slotH + 'px');
-  } else {
-    // Too many titles to fit: use natural height (some will be clipped)
-    $items.css('height', '');
-  }
 
-  // Collage mode + titles visible: shrink each input to its actual rendered text width,
-  // then set #chartContainer to exactly chart width + longest title width.
-  // On mobile this may exceed the viewport — the parent scroll wrapper handles overflow.
+  // Position each title at the vertical center of its corresponding tile
+  const allTiles = document.querySelectorAll('#chart img.tile');
+  const titlesTop = titlesEl.getBoundingClientRect().top;
+
+  $items.each(function () {
+    const idx = parseInt(this.dataset.tileIndex);
+    const tile = allTiles[idx];
+    if (!tile) return;
+    const tileRect = tile.getBoundingClientRect();
+    const centerY = tileRect.top + tileRect.height / 2 - titlesTop;
+    const inputH = this.offsetHeight || fs * 1.2;
+    this.style.position = 'absolute';
+    this.style.top = Math.max(pt, centerY - inputH / 2) + 'px';
+    this.style.left = '0';
+  });
+
   if (chart && !chart.options.grid && chart.options.titles && n > 0) {
-    // During drag: repaintChart() fires on every tile-over event and resets inputs to
-    // overestimated em widths, making #titles too wide and chartW too small. Each
-    // updateTitlesHeight call would then shrink the container further. Skip entirely
-    // while dragging — the drop handler resets the layout cleanly after the drag ends.
     if (dragIndex !== -1) return;
 
     const containerEl = document.getElementById('chartContainer');
-    const chartEl = document.getElementById('chart');
 
-    // Override any CSS flex constraint on #titles (e.g. mobile 28% rule)
     titlesEl.style.flex = '0 0 auto';
     titlesEl.style.maxWidth = 'none';
 
-    // Canvas text measurement uses the same font as the browser renders
     const canvasCtx = document.createElement('canvas').getContext('2d');
     canvasCtx.font = style.font;
     const padRight = parseFloat(style.paddingRight) || 0;
 
     let maxTextW = 0;
-    $titles.find('.title').each(function () {
-      // +6px so the cursor/caret never clips the last glyph
+    $items.each(function () {
       const tw = Math.ceil(canvasCtx.measureText(this.value).width) + 6;
       this.style.width = tw + 'px';
       if (tw > maxTextW) maxTextW = tw;
     });
 
-    // Read chartW AFTER setting pixel widths — accessing offsetWidth forces a
-    // synchronous reflow, so the value reflects the corrected #titles width (not
-    // the temporary em-based widths from repaintChart). Reading before the loop
-    // caused the container to shrink on every repaint because the em widths
-    // made #titles appear wider than it should be, compressing #chart.
+    // Explicitly set #titles width since children are absolute-positioned
+    titlesEl.style.width = (maxTextW + padRight) + 'px';
+
     const scrollWrapper = document.getElementById('chartScrollWrapper');
     const chartW = (scrollWrapper && window.innerWidth <= 767)
       ? scrollWrapper.offsetWidth
@@ -108,9 +103,9 @@ function updateTitlesHeight() {
 
     containerEl.style.width = (chartW + maxTextW + padRight) + 'px';
   } else if (chart) {
-    // Grid mode or titles hidden: let CSS control #titles flex (restore override)
     titlesEl.style.flex = '';
     titlesEl.style.maxWidth = '';
+    titlesEl.style.width = '';
   }
 }
 
@@ -369,6 +364,7 @@ function repaintChart() {
       let input = document.createElement('input');
       input.type = 'text';
       input.className = 'title';
+      input.dataset.tileIndex = i;
       input.value = chart.titles[i];
       let w = getDisplayWidth(input.value);
       input.style.width = (w * 0.55 + 1) + 'em';
@@ -377,10 +373,6 @@ function repaintChart() {
         setTimeout(updateTitlesHeight, 0);
       })(i));
       $('#titles').append(input);
-    } else {
-      let ph = document.createElement('div');
-      ph.className = 'title-placeholder';
-      $('#titles').append(ph);
     }
   }
 
