@@ -46,7 +46,7 @@ function updateTitlesHeight() {
   if (chartH <= 0) return;
 
   $titles.css('height', chartH + 'px');
-  const $items = $titles.find('.title');
+  const $items = $titles.find('.title, .title-placeholder');
   const n = $items.length;
   if (n === 0) return;
 
@@ -89,7 +89,7 @@ function updateTitlesHeight() {
     const padRight = parseFloat(style.paddingRight) || 0;
 
     let maxTextW = 0;
-    $items.each(function () {
+    $titles.find('.title').each(function () {
       // +6px so the cursor/caret never clips the last glyph
       const tw = Math.ceil(canvasCtx.measureText(this.value).width) + 6;
       this.style.width = tw + 'px';
@@ -365,18 +365,22 @@ function repaintChart() {
 
   $('#titles').html('');
   for (let i = 0; i < images.length; i++) {
-    if (chart.titles[i].length > 0) {
+    if (chart.titles[i] && chart.titles[i].length > 0) {
       let input = document.createElement('input');
       input.type = 'text';
       input.className = 'title';
       input.value = chart.titles[i];
       let w = getDisplayWidth(input.value);
       input.style.width = (w * 0.55 + 1) + 'em';
-      $(input).change((e) => {
-        chart.titles[$('.title').index(e.target)] = e.target.value;
+      $(input).change(((idx) => (e) => {
+        chart.titles[idx] = e.target.value;
         setTimeout(updateTitlesHeight, 0);
-      });
+      })(i));
       $('#titles').append(input);
+    } else {
+      let ph = document.createElement('div');
+      ph.className = 'title-placeholder';
+      $('#titles').append(ph);
     }
   }
 

@@ -106,9 +106,8 @@ module.exports = async (req, res) => {
   let slotH = 0;
 
   if (showTitles) {
-    const n = nonEmptyTitles.length;
     const contentH = totalH - 2 * outerPad;
-    slotH = contentH / n;
+    slotH = contentH / tileCount;
     fontSize = Math.max(20, Math.min(Math.floor(slotH * 0.65), 56));
 
     const measureCtx = createCanvas(1, 1).getContext('2d');
@@ -201,13 +200,11 @@ module.exports = async (req, res) => {
     ctx.font = `${fontSize}px ${fontFamily}`;
     ctx.fillStyle = '#ffffff';
     ctx.textBaseline = 'middle';
-    let j = 0;
     for (let i = 0; i < tileCount; i++) {
       const t = rawTitles[i] || '';
       if (t.length === 0) continue;
-      const ty = outerPad + slotH * j + slotH / 2;
+      const ty = outerPad + slotH * i + slotH / 2;
       ctx.fillText(t, CHART_W + 10, ty);
-      j++;
     }
   }
 
