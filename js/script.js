@@ -58,37 +58,25 @@ function updateTitlesHeight() {
 
   $titles.css('justify-content', 'flex-start');
 
-  // Position each title near the vertical center of its corresponding tile.
-  // Tiles in the same row share a center Y, so anchor at the tile center then
-  // push each title down whenever it would overlap the previous one. This keeps
-  // titles aligned to their tiles while never letting them stack on top of
-  // one another (which happens for multiple tiles per row).
-  const allTiles = document.querySelectorAll('#chart img.tile');
-  const titlesTop = titlesEl.getBoundingClientRect().top;
-
-  // Shrink the font as needed so the whole title list fits within the chart
-  // height — the last title ends near the chart bottom instead of overflowing.
+  // Distribute the titles evenly across the full chart height (not per-tile),
+  // so the list always spans top-to-bottom without overflowing. The font is
+  // shrunk as needed so rows never overlap and the last title ends near the
+  // chart bottom.
+  const slot = chartH / n;
   const desiredLineH = Math.round(fs * 1.35);
-  const lineH = Math.max(6, Math.min(desiredLineH, Math.floor(chartH / n)));
+  const lineH = Math.max(6, Math.min(desiredLineH, Math.floor(slot)));
   const titleFs = lineH / 1.35;
 
-  let prevBottom = -Infinity;
+  let k = 0;
   $items.each(function () {
     this.style.fontSize = titleFs + 'px';
     this.style.lineHeight = lineH + 'px';
     this.style.height = lineH + 'px';
-    const idx = parseInt(this.dataset.tileIndex);
-    const tile = allTiles[idx];
-    if (!tile) return;
-    const tileRect = tile.getBoundingClientRect();
-    const centerY = tileRect.top + tileRect.height / 2 - titlesTop;
-    let top = centerY - lineH / 2;
-    if (top < pt) top = pt;
-    if (top < prevBottom) top = prevBottom;
+    const centerY = (k + 0.5) * slot;
     this.style.position = 'absolute';
-    this.style.top = top + 'px';
+    this.style.top = (centerY - lineH / 2) + 'px';
     this.style.left = '0';
-    prevBottom = top + lineH;
+    k++;
   });
 
   if (chart && !chart.options.grid && chart.options.titles && n > 0) {

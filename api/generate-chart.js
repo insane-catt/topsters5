@@ -124,22 +124,20 @@ module.exports = async (req, res) => {
     titleColW = Math.min(Math.ceil(maxW) + 40, 800);
   }
 
-  // Pre-compute title Y positions. Each title anchors at its tile's vertical
-  // center, then is pushed down whenever it would overlap the previous title
-  // (tiles sharing a row have the same center Y). The font was shrunk above so
-  // the de-collided list fits inside the chart height.
+  // Pre-compute title Y positions by distributing the titles evenly across the
+  // full chart height (not per-tile), so the list always spans top-to-bottom
+  // without overflowing. The font was shrunk above so rows never overlap.
   let titleLayout = [];
   if (showTitles) {
-    let prevBottom = -Infinity;
+    const N = nonEmptyTitles.length;
+    const availableH = totalH - 2 * outerPad;
+    const slot = availableH / N;
+    let k = 0;
     for (let i = 0; i < tileCount; i++) {
       const t = rawTitles[i];
       if (!t) continue;
-      const pos = positions[i];
-      if (!pos) continue;
-      let y = pos.y + pos.h / 2; // baseline is 'middle'
-      if (y - lineH / 2 < prevBottom) y = prevBottom + lineH / 2;
-      titleLayout.push({ text: t, y });
-      prevBottom = y + lineH / 2;
+      titleLayout.push({ text: t, y: outerPad + (k + 0.5) * slot });
+      k++;
     }
   }
 
