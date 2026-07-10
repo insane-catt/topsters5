@@ -61,10 +61,12 @@ function updateTitlesHeight() {
   // Distribute the titles evenly across the region from the TOP of the first
   // titled tile to the BOTTOM of the last titled tile. Anchoring to real tile
   // edges (not centers) is correct because tile sizes differ a lot between
-  // tiers. The font is kept at a fixed size — never shrunk.
+  // tiers. The font is a fixed fraction of the chart width — matching the
+  // server (CHART_W / 64) so the preview and the download look the same.
   const allTiles = document.querySelectorAll('#chart img.tile');
   const titlesTop = titlesEl.getBoundingClientRect().top;
-  const lineH = Math.round(fs * 1.35);
+  const titleFs = Math.max(6, chartEl.offsetWidth / 64);
+  const lineH = Math.round(titleFs * 1.35);
 
   const firstTile = allTiles[parseInt($items.first()[0].dataset.tileIndex)];
   const lastTile = allTiles[parseInt($items.last()[0].dataset.tileIndex)];
@@ -82,9 +84,9 @@ function updateTitlesHeight() {
 
   let k = 0;
   $items.each(function () {
-    this.style.fontSize = '';
-    this.style.lineHeight = '';
-    this.style.height = '';
+    this.style.fontSize = titleFs + 'px';
+    this.style.lineHeight = lineH + 'px';
+    this.style.height = lineH + 'px';
     const centerY = top + (k + 0.5) * slot;
     this.style.position = 'absolute';
     this.style.top = (centerY - lineH / 2) + 'px';
@@ -101,7 +103,7 @@ function updateTitlesHeight() {
     titlesEl.style.maxWidth = 'none';
 
     const canvasCtx = document.createElement('canvas').getContext('2d');
-    canvasCtx.font = style.font;
+    canvasCtx.font = `${titleFs}px ${style.fontFamily}`;
     const padRight = parseFloat(style.paddingRight) || 0;
 
     let maxTextW = 0;

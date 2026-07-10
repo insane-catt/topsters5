@@ -107,7 +107,7 @@ module.exports = async (req, res) => {
   if (showTitles) {
     // Fixed font size — never shrink it, and never squeeze long titles
     // horizontally (the column is made as wide as the longest title needs).
-    fontSize = Math.round(CHART_W / 50);
+    fontSize = Math.round(CHART_W / 64);
 
     const measureCtx = createCanvas(1, 1).getContext('2d');
     measureCtx.font = `${fontSize}px ${fontFamily}`;
