@@ -217,12 +217,18 @@ function getAlbums() {
                 drag: (e, ui) => {
                   const r = document.getElementById('results').getBoundingClientRect();
                   const hH = ui.helper.height();
+                  // ui.position is in DOCUMENT coords (appendTo body), so the
+                  // viewport bounds must be shifted by the page scroll offset —
+                  // otherwise, once the page is scrolled (e.g. 100-tile charts),
+                  // the helper gets clamped near the top of the document and
+                  // can't reach the lower tiles ("invisible wall").
+                  const sx = window.scrollX, sy = window.scrollY;
                   // Left bound: results left edge; right: unconstrained (matches results width)
-                  if (ui.position.left < r.left) ui.position.left = r.left;
-                  // Vertical: keep within window
-                  if (ui.position.top < 0) ui.position.top = 0;
-                  if (ui.position.top + hH > window.innerHeight)
-                    ui.position.top = window.innerHeight - hH;
+                  if (ui.position.left < r.left + sx) ui.position.left = r.left + sx;
+                  // Vertical: keep within the visible window
+                  if (ui.position.top < sy) ui.position.top = sy;
+                  if (ui.position.top + hH > sy + window.innerHeight)
+                    ui.position.top = sy + window.innerHeight - hH;
                 }
               });
               $(img).css({ height: $('#results').width() / 2 });
@@ -340,10 +346,14 @@ function addCustomImage() {
     drag: (e, ui) => {
       const r = document.getElementById('results').getBoundingClientRect();
       const hH = ui.helper.height();
-      if (ui.position.left < r.left) ui.position.left = r.left;
-      if (ui.position.top < 0) ui.position.top = 0;
-      if (ui.position.top + hH > window.innerHeight)
-        ui.position.top = window.innerHeight - hH;
+      // ui.position is in DOCUMENT coords (appendTo body); shift viewport bounds
+      // by the page scroll so the helper isn't walled off from lower tiles once
+      // the page is scrolled (see the search-result draggable above).
+      const sx = window.scrollX, sy = window.scrollY;
+      if (ui.position.left < r.left + sx) ui.position.left = r.left + sx;
+      if (ui.position.top < sy) ui.position.top = sy;
+      if (ui.position.top + hH > sy + window.innerHeight)
+        ui.position.top = sy + window.innerHeight - hH;
     }
   });
   $(img).css({ height: $('#results').width() / 2 });
