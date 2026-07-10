@@ -6,7 +6,7 @@ GlobalFonts.registerFromPath(
   'NotoSansJP'
 );
 
-const CHART_W = 1400;
+const CHART_W = 2800;
 
 function getTileWidthFraction(i, grid, cols, length) {
   if (grid) return 1 / cols;
@@ -109,7 +109,7 @@ module.exports = async (req, res) => {
     const n = nonEmptyTitles.length;
     const contentH = totalH - 2 * outerPad;
     slotH = contentH / n;
-    fontSize = Math.max(10, Math.min(Math.floor(slotH * 0.65), 28));
+    fontSize = Math.max(20, Math.min(Math.floor(slotH * 0.65), 56));
 
     const measureCtx = createCanvas(1, 1).getContext('2d');
     measureCtx.font = `${fontSize}px ${fontFamily}`;
@@ -118,7 +118,7 @@ module.exports = async (req, res) => {
       const w = measureCtx.measureText(t).width;
       if (w > maxW) maxW = w;
     }
-    titleColW = Math.ceil(maxW) + 20;
+    titleColW = Math.ceil(maxW) + 40;
   }
 
   const canvasW = CHART_W + titleColW;
@@ -214,7 +214,7 @@ module.exports = async (req, res) => {
   const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/png';
   const ext = format === 'jpg' ? 'jpg' : 'png';
   const buffer = format === 'jpg'
-    ? await canvas.encode('jpeg', 90)
+    ? await canvas.encode('jpeg', 95)
     : await canvas.encode('png');
 
   res.setHeader('Content-Type', mimeType);
