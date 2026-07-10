@@ -580,9 +580,12 @@ function generateChart() {
   resize();
   outerPadding();
   innerPadding();
-  setTimeout(updateTitlesHeight, 0);
-  setTimeout(refreshDeleteButtons, 0);
-  storeToJSON();
+  // Rebuild the titles list for the new tile count: repaintChart() only creates
+  // inputs for i < current tile count, so titles for tiles hidden by a smaller
+  // count drop off, and they come back (from chart.titles) when the count grows
+  // again — mirroring how the tiles themselves persist. It also handles the
+  // deferred title layout, delete-button refresh, and storeToJSON.
+  repaintChart();
 }
 
 /**
