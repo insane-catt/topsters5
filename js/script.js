@@ -58,40 +58,57 @@ function updateTitlesHeight() {
 
   $titles.css('justify-content', 'flex-start');
 
-  // Distribute the titles evenly across the region from the TOP of the first
-  // titled tile to the BOTTOM of the last titled tile. Anchoring to real tile
-  // edges (not centers) is correct because tile sizes differ a lot between
-  // tiers. The font is a fixed fraction of the chart width — matching the
-  // server (CHART_W / 64) so the preview and the download look the same.
+  // Lay out titles across the region from the TOP of the first titled tile to
+  // the BOTTOM of the last titled tile (tile sizes differ a lot between tiers).
+  // Titles fill that region, with EXTRA space at every row boundary so they
+  // group by row. If those gaps would push the list past the bottom, the font
+  // is shrunk so everything still fits. Matches the server (CHART_W / 64).
   const allTiles = document.querySelectorAll('#chart img.tile');
   const titlesTop = titlesEl.getBoundingClientRect().top;
-  const titleFs = Math.max(6, chartEl.offsetWidth / 64);
-  const lineH = Math.round(titleFs * 1.35);
 
-  const firstTile = allTiles[parseInt($items.first()[0].dataset.tileIndex)];
-  const lastTile = allTiles[parseInt($items.last()[0].dataset.tileIndex)];
+  const items = $items.toArray();
+  const rowKeys = [];
   let top = pt;
   let bottom = chartH;
-  if (firstTile) {
-    const r = firstTile.getBoundingClientRect();
-    top = r.top - titlesTop;
-  }
-  if (lastTile) {
-    const r = lastTile.getBoundingClientRect();
-    bottom = r.bottom - titlesTop;
-  }
-  const slot = (bottom - top) / n;
+  items.forEach((el, k) => {
+    const tile = allTiles[parseInt(el.dataset.tileIndex)];
+    if (!tile) { rowKeys[k] = -k - 1; return; }
+    const r = tile.getBoundingClientRect();
+    rowKeys[k] = Math.round(r.top - titlesTop);
+    if (k === 0) top = r.top - titlesTop;
+    if (k === items.length - 1) bottom = r.bottom - titlesTop;
+  });
+  const H = bottom - top;
 
-  let k = 0;
-  $items.each(function () {
-    this.style.fontSize = titleFs + 'px';
-    this.style.lineHeight = lineH + 'px';
-    this.style.height = lineH + 'px';
-    const centerY = top + (k + 0.5) * slot;
-    this.style.position = 'absolute';
-    this.style.top = (centerY - lineH / 2) + 'px';
-    this.style.left = '0';
-    k++;
+  let transitions = 0;
+  for (let k = 1; k < n; k++) if (rowKeys[k] !== rowKeys[k - 1]) transitions++;
+
+  const GAP = 0.6;
+  const W = (n - 1) + GAP * transitions;
+  let titleFs = Math.max(6, chartEl.offsetWidth / 64);
+  let lineH = Math.round(titleFs * 1.35);
+  if (n > 1) {
+    const maxLineH = H / (W + 1);
+    if (lineH > maxLineH) {
+      lineH = maxLineH;
+      titleFs = lineH / 1.35;
+    }
+  }
+
+  const s = n > 1 ? (H - lineH) / W : 0;
+  const E = s * GAP;
+  let y = n > 1 ? top + lineH / 2 : (top + bottom) / 2;
+  items.forEach((el, k) => {
+    if (k > 0) {
+      y += s;
+      if (rowKeys[k] !== rowKeys[k - 1]) y += E;
+    }
+    el.style.fontSize = titleFs + 'px';
+    el.style.lineHeight = lineH + 'px';
+    el.style.height = lineH + 'px';
+    el.style.position = 'absolute';
+    el.style.top = (y - lineH / 2) + 'px';
+    el.style.left = '0';
   });
 
   if (chart && !chart.options.grid && chart.options.titles && n > 0) {

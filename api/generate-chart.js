@@ -101,14 +101,48 @@ module.exports = async (req, res) => {
   const nonEmptyTitles = rawTitles.filter(t => t && t.length > 0);
   const showTitles = chart.options.titles && nonEmptyTitles.length > 0;
 
+  // Lay out titles across the region from the TOP of the first titled tile to
+  // the BOTTOM of the last titled tile (tile sizes differ a lot between tiers,
+  // so edge anchoring beats center anchoring). Titles fill that region, with
+  // EXTRA space inserted wherever the tiles wrap to a new row so they group by
+  // row and read more easily. If those gaps would push the list past the
+  // bottom, the font is shrunk so everything still fits.
   let titleColW = 0;
   let fontSize = 14;
+  let titleLayout = [];
 
   if (showTitles) {
-    // Fixed font size — never shrink it, and never squeeze long titles
-    // horizontally (the column is made as wide as the longest title needs).
-    fontSize = Math.round(CHART_W / 64);
+    const titledIdx = [];
+    for (let i = 0; i < tileCount; i++) {
+      if (rawTitles[i] && positions[i]) titledIdx.push(i);
+    }
+    const N = titledIdx.length;
+    const fp = positions[titledIdx[0]];
+    const lp = positions[titledIdx[titledIdx.length - 1]];
+    const top = fp.y;
+    const bottom = lp.y + lp.h;
+    const H = bottom - top;
 
+    // Tiles in the same row share pos.y — count the row boundaries.
+    const rowKeys = titledIdx.map(i => Math.round(positions[i].y));
+    let transitions = 0;
+    for (let k = 1; k < N; k++) if (rowKeys[k] !== rowKeys[k - 1]) transitions++;
+
+    // Base font, then shrink only if the lines + row-boundary gaps would not
+    // fit within H. GAP is the row-boundary gap as a fraction of in-row spacing.
+    const GAP = 0.6;
+    const W = (N - 1) + GAP * transitions;
+    fontSize = Math.round(CHART_W / 64);
+    let lineH = fontSize * 1.35;
+    if (N > 1) {
+      const maxLineH = H / (W + 1);
+      if (lineH > maxLineH) {
+        lineH = maxLineH;
+        fontSize = lineH / 1.35;
+      }
+    }
+
+    // Column width measured with the final font size (no horizontal squeeze).
     const measureCtx = createCanvas(1, 1).getContext('2d');
     measureCtx.font = `${fontSize}px ${fontFamily}`;
     let maxW = 0;
@@ -117,26 +151,18 @@ module.exports = async (req, res) => {
       if (w > maxW) maxW = w;
     }
     titleColW = Math.ceil(maxW) + 40;
-  }
 
-  // Pre-compute title Y positions by distributing the titles evenly across the
-  // region from the TOP of the first titled tile to the BOTTOM of the last
-  // titled tile. Anchoring to the real tile edges (not centers) is correct
-  // because tile sizes differ a lot between tiers.
-  let titleLayout = [];
-  if (showTitles) {
-    const N = nonEmptyTitles.length;
-    const titledIdx = [];
-    for (let i = 0; i < tileCount; i++) {
-      if (rawTitles[i] && positions[i]) titledIdx.push(i);
-    }
-    const fp = positions[titledIdx[0]];
-    const lp = positions[titledIdx[titledIdx.length - 1]];
-    const top = fp.y;
-    const bottom = lp.y + lp.h;
-    const slot = (bottom - top) / N;
+    // In-row spacing s, plus s*GAP extra at each row boundary; the total fills
+    // [top + lineH/2, bottom - lineH/2] exactly (never overflows).
+    const s = N > 1 ? (H - lineH) / W : 0;
+    const E = s * GAP;
+    let y = N > 1 ? top + lineH / 2 : (top + bottom) / 2;
     for (let k = 0; k < N; k++) {
-      titleLayout.push({ text: nonEmptyTitles[k], y: top + (k + 0.5) * slot });
+      if (k > 0) {
+        y += s;
+        if (rowKeys[k] !== rowKeys[k - 1]) y += E;
+      }
+      titleLayout.push({ text: nonEmptyTitles[k], y });
     }
   }
 
