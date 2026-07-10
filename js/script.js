@@ -1036,7 +1036,7 @@ $(() => {
     $('#chartList').prepend(innerHTML);
     loadChart(data.index);
   } else {
-    $('#createChart').click();
+    $('#createChartModal').modal('show');
   }
 
   $('#imgImportURLDiv').hide();

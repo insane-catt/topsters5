@@ -23,12 +23,13 @@
       <aside class="d-flex flex-column text-white">
         <!-- Mobile Tab Bar -->
         <div id="mobileTabBar">
+          <button class="mobile-tab" onclick="mobileTab('charts')">Charts</button>
           <button class="mobile-tab" onclick="mobileTab('options')">Options</button>
           <button class="mobile-tab mobile-tab-active" onclick="mobileTab('search')">Search</button>
         </div>
 
-        <!-- Charts Panel (desktop only) -->
-        <div id="tabCharts" class="d-none d-md-flex flex-column pl-4 py-4">
+        <!-- Charts Panel (desktop sidebar + mobile panel) -->
+        <div id="tabCharts" class="d-md-flex flex-column pl-4 py-4 mobile-panel">
 
         <!-- Chart List -->
         <div id="chartList" class="overflow-auto text-center">
@@ -40,93 +41,6 @@
           >
             Create New Chart
           </button>
-        </div>
-
-        <!-- New Chart Modal -->
-        <div
-          class="modal fade"
-          id="createChartModal"
-          tabindex="-1"
-          role="dialog"
-          aria-labelledby="createChartModal"
-          aria-hidden="true"
-        >
-          <div class="modal-dialog" role="document">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">Create New Chart</h5>
-                <button
-                  class="close"
-                  data-dismiss="modal"
-                  aria-label="Close"
-                  onClick="storeToJSON()"
-                >
-                  <span aria-hidden="true">&times;</span>
-                </button>
-              </div>
-              <div class="modal-body">
-                <label for="chartName">Name of Chart:</label><br />
-                <input type="text" id="chartName" onfocus="checkEnter()" />
-              </div>
-              <div class="modal-footer">
-                <button
-                  class="btn btn-light text-dark rounded-0"
-                  data-dismiss="modal"
-                >
-                  Cancel
-                </button>
-                <button
-                  id="btnCreate"
-                  class="btn btn-light text-dark rounded-0"
-                  onclick="newChart()"
-                  data-dismiss="modal"
-                >
-                  Create
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Delete Chart Confirmation -->
-        <div
-          class="modal fade"
-          id="deleteChartModal"
-          tabindex="-1"
-          role="dialog"
-          aria-labelledby="deleteChartModal"
-          aria-hidden="true"
-        >
-          <div class="modal-dialog" role="document">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 id="deleteTitle" class="modal-title"></h5>
-                <button
-                  class="close"
-                  data-dismiss="modal"
-                  aria-label="Close"
-                  onClick="storeToJSON()"
-                >
-                  <span aria-hidden="true">&times;</span>
-                </button>
-              </div>
-              <div class="modal-footer">
-                <button
-                  class="btn btn-light text-dark rounded-0"
-                  data-dismiss="modal"
-                >
-                  No
-                </button>
-                <button
-                  id="btnDelete"
-                  class="btn btn-light text-dark rounded-0"
-                  data-dismiss="modal"
-                >
-                  Yes
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
 
         <hr class="hr-border w-100" />
@@ -329,6 +243,93 @@
           class="d-flex flex-row flex-wrap flex-grow-1 flex-shrink-1 overflow-auto"
         ></div>
         </div><!-- /tabSearch -->
+
+        <!-- New Chart Modal (outside hidden panels so it works on mobile) -->
+        <div
+          class="modal fade"
+          id="createChartModal"
+          tabindex="-1"
+          role="dialog"
+          aria-labelledby="createChartModal"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Create New Chart</h5>
+                <button
+                  class="close"
+                  data-dismiss="modal"
+                  aria-label="Close"
+                  onClick="storeToJSON()"
+                >
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <label for="chartName">Name of Chart:</label><br />
+                <input type="text" id="chartName" onfocus="checkEnter()" />
+              </div>
+              <div class="modal-footer">
+                <button
+                  class="btn btn-light text-dark rounded-0"
+                  data-dismiss="modal"
+                >
+                  Cancel
+                </button>
+                <button
+                  id="btnCreate"
+                  class="btn btn-light text-dark rounded-0"
+                  onclick="newChart()"
+                  data-dismiss="modal"
+                >
+                  Create
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Delete Chart Confirmation (outside hidden panels so it works on mobile) -->
+        <div
+          class="modal fade"
+          id="deleteChartModal"
+          tabindex="-1"
+          role="dialog"
+          aria-labelledby="deleteChartModal"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 id="deleteTitle" class="modal-title"></h5>
+                <button
+                  class="close"
+                  data-dismiss="modal"
+                  aria-label="Close"
+                  onClick="storeToJSON()"
+                >
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-footer">
+                <button
+                  class="btn btn-light text-dark rounded-0"
+                  data-dismiss="modal"
+                >
+                  No
+                </button>
+                <button
+                  id="btnDelete"
+                  class="btn btn-light text-dark rounded-0"
+                  data-dismiss="modal"
+                >
+                  Yes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </aside>
 
       <main class="p-4 flex-grow-1">
