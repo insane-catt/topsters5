@@ -65,30 +65,31 @@ function updateTitlesHeight() {
   // one another (which happens for multiple tiles per row).
   const allTiles = document.querySelectorAll('#chart img.tile');
   const titlesTop = titlesEl.getBoundingClientRect().top;
-  const lineH = Math.round(fs * 1.35);
+
+  // Shrink the font as needed so the whole title list fits within the chart
+  // height — the last title ends near the chart bottom instead of overflowing.
+  const desiredLineH = Math.round(fs * 1.35);
+  const lineH = Math.max(6, Math.min(desiredLineH, Math.floor(chartH / n)));
+  const titleFs = lineH / 1.35;
 
   let prevBottom = -Infinity;
   $items.each(function () {
+    this.style.fontSize = titleFs + 'px';
+    this.style.lineHeight = lineH + 'px';
+    this.style.height = lineH + 'px';
     const idx = parseInt(this.dataset.tileIndex);
     const tile = allTiles[idx];
     if (!tile) return;
     const tileRect = tile.getBoundingClientRect();
     const centerY = tileRect.top + tileRect.height / 2 - titlesTop;
-    const inputH = this.offsetHeight || lineH;
-    let top = centerY - inputH / 2;
+    let top = centerY - lineH / 2;
     if (top < pt) top = pt;
     if (top < prevBottom) top = prevBottom;
     this.style.position = 'absolute';
     this.style.top = top + 'px';
     this.style.left = '0';
-    prevBottom = top + Math.max(inputH, lineH);
+    prevBottom = top + lineH;
   });
-
-  // Grow the #titles column (and chart height) if the de-collided list runs
-  // past the bottom of the chart, so nothing is clipped.
-  if (prevBottom > chartH) {
-    $titles.css('height', Math.ceil(prevBottom) + 'px');
-  }
 
   if (chart && !chart.options.grid && chart.options.titles && n > 0) {
     if (dragIndex !== -1) return;
@@ -99,7 +100,7 @@ function updateTitlesHeight() {
     titlesEl.style.maxWidth = 'none';
 
     const canvasCtx = document.createElement('canvas').getContext('2d');
-    canvasCtx.font = style.font;
+    canvasCtx.font = `${titleFs}px ${style.fontFamily}`;
     const padRight = parseFloat(style.paddingRight) || 0;
 
     let maxTextW = 0;

@@ -103,9 +103,16 @@ module.exports = async (req, res) => {
 
   let titleColW = 0;
   let fontSize = 14;
+  let lineH = 18;
 
   if (showTitles) {
-    fontSize = Math.round(CHART_W / 50);
+    const N = nonEmptyTitles.length;
+    // Shrink the font as needed so the whole title list fits within the chart
+    // height (last title ends near the chart bottom instead of overflowing).
+    const availableH = totalH - 2 * outerPad;
+    const desiredLineH = Math.round((CHART_W / 50) * 1.35);
+    lineH = Math.min(desiredLineH, Math.floor(availableH / N));
+    fontSize = Math.max(8, Math.round(lineH / 1.35));
 
     const measureCtx = createCanvas(1, 1).getContext('2d');
     measureCtx.font = `${fontSize}px ${fontFamily}`;
@@ -117,14 +124,12 @@ module.exports = async (req, res) => {
     titleColW = Math.min(Math.ceil(maxW) + 40, 800);
   }
 
-  // Pre-compute title Y positions with collision avoidance so tiles that share
-  // a row (same center Y) don't stack their titles on top of each other.
-  // Each title anchors at its tile's vertical center, then is pushed down
-  // whenever it would overlap the previous title.
+  // Pre-compute title Y positions. Each title anchors at its tile's vertical
+  // center, then is pushed down whenever it would overlap the previous title
+  // (tiles sharing a row have the same center Y). The font was shrunk above so
+  // the de-collided list fits inside the chart height.
   let titleLayout = [];
-  let titlesBottom = 0;
   if (showTitles) {
-    const lineH = Math.round(fontSize * 1.35);
     let prevBottom = -Infinity;
     for (let i = 0; i < tileCount; i++) {
       const t = rawTitles[i];
@@ -136,11 +141,10 @@ module.exports = async (req, res) => {
       titleLayout.push({ text: t, y });
       prevBottom = y + lineH / 2;
     }
-    titlesBottom = prevBottom + outerPad;
   }
 
   const canvasW = CHART_W + titleColW;
-  const canvasH = Math.ceil(Math.max(totalH, titlesBottom));
+  const canvasH = Math.ceil(totalH);
   const canvas = createCanvas(canvasW, canvasH);
   const ctx = canvas.getContext('2d');
 
