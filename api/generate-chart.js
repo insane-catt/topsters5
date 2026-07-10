@@ -117,8 +117,31 @@ module.exports = async (req, res) => {
     titleColW = Math.min(Math.ceil(maxW) + 40, 800);
   }
 
+  // Pre-compute title Y positions with collision avoidance so tiles that share
+  // a row (same center Y) don't stack their titles on top of each other.
+  // Each title anchors at its tile's vertical center, then is pushed down
+  // whenever it would overlap the previous title.
+  let titleLayout = [];
+  let titlesBottom = 0;
+  if (showTitles) {
+    const lineH = Math.round(fontSize * 1.35);
+    let prevBottom = -Infinity;
+    for (let i = 0; i < tileCount; i++) {
+      const t = rawTitles[i];
+      if (!t) continue;
+      const pos = positions[i];
+      if (!pos) continue;
+      let y = pos.y + pos.h / 2; // baseline is 'middle'
+      if (y - lineH / 2 < prevBottom) y = prevBottom + lineH / 2;
+      titleLayout.push({ text: t, y });
+      prevBottom = y + lineH / 2;
+    }
+    titlesBottom = prevBottom + outerPad;
+  }
+
   const canvasW = CHART_W + titleColW;
-  const canvas = createCanvas(canvasW, Math.ceil(totalH));
+  const canvasH = Math.ceil(Math.max(totalH, titlesBottom));
+  const canvas = createCanvas(canvasW, canvasH);
   const ctx = canvas.getContext('2d');
 
   // Background
@@ -131,16 +154,16 @@ module.exports = async (req, res) => {
         if (resp.ok) {
           const buf = Buffer.from(await resp.arrayBuffer());
           const bgImg = await loadImage(buf);
-          ctx.drawImage(bgImg, 0, 0, canvasW, Math.ceil(totalH));
+          ctx.drawImage(bgImg, 0, 0, canvasW, canvasH);
         }
       }
     } catch (_) {
       ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, canvasW, Math.ceil(totalH));
+      ctx.fillRect(0, 0, canvasW, canvasH);
     }
   } else {
     ctx.fillStyle = bg || '#000000';
-    ctx.fillRect(0, 0, canvasW, Math.ceil(totalH));
+    ctx.fillRect(0, 0, canvasW, canvasH);
   }
 
   // Build list of tile sources (empty string = blank tile)
@@ -197,12 +220,8 @@ module.exports = async (req, res) => {
     ctx.font = `${fontSize}px ${fontFamily}`;
     ctx.fillStyle = '#ffffff';
     ctx.textBaseline = 'middle';
-    for (let i = 0; i < tileCount; i++) {
-      const t = rawTitles[i] || '';
-      if (!t) continue;
-      const pos = positions[i];
-      if (!pos) continue;
-      ctx.fillText(t, CHART_W + 10, pos.y + pos.h / 2, titleColW - 20);
+    for (const lab of titleLayout) {
+      ctx.fillText(lab.text, CHART_W + 10, lab.y, titleColW - 20);
     }
   }
 

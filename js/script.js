@@ -58,21 +58,37 @@ function updateTitlesHeight() {
 
   $titles.css('justify-content', 'flex-start');
 
-  // Position each title at the vertical center of its corresponding tile
+  // Position each title near the vertical center of its corresponding tile.
+  // Tiles in the same row share a center Y, so anchor at the tile center then
+  // push each title down whenever it would overlap the previous one. This keeps
+  // titles aligned to their tiles while never letting them stack on top of
+  // one another (which happens for multiple tiles per row).
   const allTiles = document.querySelectorAll('#chart img.tile');
   const titlesTop = titlesEl.getBoundingClientRect().top;
+  const lineH = Math.round(fs * 1.35);
 
+  let prevBottom = -Infinity;
   $items.each(function () {
     const idx = parseInt(this.dataset.tileIndex);
     const tile = allTiles[idx];
     if (!tile) return;
     const tileRect = tile.getBoundingClientRect();
     const centerY = tileRect.top + tileRect.height / 2 - titlesTop;
-    const inputH = this.offsetHeight || fs * 1.2;
+    const inputH = this.offsetHeight || lineH;
+    let top = centerY - inputH / 2;
+    if (top < pt) top = pt;
+    if (top < prevBottom) top = prevBottom;
     this.style.position = 'absolute';
-    this.style.top = Math.max(pt, centerY - inputH / 2) + 'px';
+    this.style.top = top + 'px';
     this.style.left = '0';
+    prevBottom = top + Math.max(inputH, lineH);
   });
+
+  // Grow the #titles column (and chart height) if the de-collided list runs
+  // past the bottom of the chart, so nothing is clipped.
+  if (prevBottom > chartH) {
+    $titles.css('height', Math.ceil(prevBottom) + 'px');
+  }
 
   if (chart && !chart.options.grid && chart.options.titles && n > 0) {
     if (dragIndex !== -1) return;
