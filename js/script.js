@@ -1165,6 +1165,12 @@ $(() => {
   $('#imgImportFileRadio').prop('checked', true);
   window.onresize = resize;
 
+  // Album Search: focusing the box runs the search (when it has a query), so
+  // there's no need to press Enter or click Search.
+  $('#albumSearch').on('focus', function () {
+    if ($('#albumSearch').val().trim()) getAlbums();
+  });
+
   // Custom Image: preview the URL image whenever a URL is present and any of the
   // three fields is focused or edited (no need to click Search).
   $('#customImageURL, #customArtist, #customAlbum').on('focus input', previewCustomImage);
