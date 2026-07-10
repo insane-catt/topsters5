@@ -178,67 +178,73 @@ function checkEnter() {
 /**
  * Fill #results with album covers based on search terms
  */
+/**
+ * Makes a search-result <img> draggable onto the chart tiles.
+ * Shared by the album search and the custom-URL result so the drag behaviour
+ * (helper sizing + scroll-aware clamping) stays in one place.
+ */
+function makeResultDraggable(img) {
+  $(img).draggable({
+    appendTo: 'body',
+    zIndex: 10,
+    helper: 'clone',
+    scroll: false,
+    start: (e, ui) => {
+      let ref = document.querySelector('.tile-3') || document.querySelector('.tile');
+      let size = ref ? ref.offsetWidth : Math.round($('#chart').width() * 0.1);
+      $(ui.helper).css({ width: size, height: size });
+    },
+    drag: (e, ui) => {
+      const r = document.getElementById('results').getBoundingClientRect();
+      const hH = ui.helper.height();
+      // ui.position is in DOCUMENT coords (appendTo body), so the viewport
+      // bounds must be shifted by the page scroll offset — otherwise, once the
+      // page is scrolled (e.g. 100-tile charts), the helper gets clamped near
+      // the top of the document and can't reach the lower tiles.
+      const sx = window.scrollX, sy = window.scrollY;
+      // Left bound: results left edge; right: unconstrained (matches results width)
+      if (ui.position.left < r.left + sx) ui.position.left = r.left + sx;
+      // Vertical: keep within the visible window
+      if (ui.position.top < sy) ui.position.top = sy;
+      if (ui.position.top + hH > sy + window.innerHeight)
+        ui.position.top = sy + window.innerHeight - hH;
+    }
+  });
+}
+
 function getAlbums() {
   let artist = $('#artist').val();
   let album = $('#album').val();
   $('#results').html('');
+  // Last.fm's album.search takes a single query string, so combine the two
+  // fields (this matches how Topsters 3 searches — one Last.fm album query).
+  let query = [album, artist].map(s => (s || '').trim()).filter(Boolean).join(' ');
+  if (!query) return;
   // Avoids duplicate urls in results
   let sourceList = [];
-  let query =
-    (album ? 'release:' + album : '') +
-    (album && artist ? ' AND ' : '') +
-    (artist ? 'artist:' + artist : '');
-  // Retrieve list of albums that match the search input
-  xhrGet(
-    `https://musicbrainz.org/ws/2/release?query=${query}&limit=40?inc=artist-credit&fmt=json`,
-    (resp) => {
-      let releases = JSON.parse(resp).releases;
-      for (let i = 0; i < releases.length; i++) {
-        let rel = releases[i];
-        xhrGet('https://coverartarchive.org/release/' + rel['id'], (resp) => {
-          JSON.parse(resp).images.forEach((image) => {
-            let source = image['image'].replace('http:/', 'https:/');
-            if (!sourceList.includes(source)) {
-              let img = document.createElement('img');
-              img.src = source;
-              img.title =
-                rel['artist-credit'][0]['name'] + ' - ' + rel['title'];
-              img.className = 'result';
-              $(img).draggable({
-                appendTo: 'body',
-                zIndex: 10,
-                helper: 'clone',
-                scroll: false,
-                start: (e, ui) => {
-                  let ref = document.querySelector('.tile-3') || document.querySelector('.tile');
-                  let size = ref ? ref.offsetWidth : Math.round($('#chart').width() * 0.1);
-                  $(ui.helper).css({ width: size, height: size });
-                },
-                drag: (e, ui) => {
-                  const r = document.getElementById('results').getBoundingClientRect();
-                  const hH = ui.helper.height();
-                  // ui.position is in DOCUMENT coords (appendTo body), so the
-                  // viewport bounds must be shifted by the page scroll offset —
-                  // otherwise, once the page is scrolled (e.g. 100-tile charts),
-                  // the helper gets clamped near the top of the document and
-                  // can't reach the lower tiles ("invisible wall").
-                  const sx = window.scrollX, sy = window.scrollY;
-                  // Left bound: results left edge; right: unconstrained (matches results width)
-                  if (ui.position.left < r.left + sx) ui.position.left = r.left + sx;
-                  // Vertical: keep within the visible window
-                  if (ui.position.top < sy) ui.position.top = sy;
-                  if (ui.position.top + hH > sy + window.innerHeight)
-                    ui.position.top = sy + window.innerHeight - hH;
-                }
-              });
-              $(img).css({ height: $('#results').width() / 2 });
-              $('#results').append(img);
-            }
-          });
-        });
-      }
+  // Proxied Last.fm album.search (see api/lastfm-search.js)
+  xhrGet(`/api/lastfm-search?q=${encodeURIComponent(query)}`, (resp) => {
+    let albums;
+    try {
+      albums = JSON.parse(resp).results.albummatches.album || [];
+    } catch (_) {
+      albums = [];
     }
-  );
+    albums.forEach((al) => {
+      // Cover = last image entry (extralarge); skip results without a cover.
+      const imgs = al.image || [];
+      let source = imgs.length ? imgs[imgs.length - 1]['#text'] : '';
+      if (!source || sourceList.includes(source)) return;
+      sourceList.push(source);
+      let img = document.createElement('img');
+      img.src = source;
+      img.title = [al.artist, al.name].filter(Boolean).join(' - ');
+      img.className = 'result';
+      makeResultDraggable(img);
+      $(img).css({ height: $('#results').width() / 2 });
+      $('#results').append(img);
+    });
+  });
 }
 
 /**
@@ -333,29 +339,7 @@ function addCustomImage() {
   img.src = url;
   img.title = title;
   img.className = 'result';
-  $(img).draggable({
-    appendTo: 'body',
-    zIndex: 10,
-    helper: 'clone',
-    scroll: false,
-    start: (e, ui) => {
-      let ref = document.querySelector('.tile-3') || document.querySelector('.tile');
-      let size = ref ? ref.offsetWidth : Math.round($('#chart').width() * 0.1);
-      $(ui.helper).css({ width: size, height: size });
-    },
-    drag: (e, ui) => {
-      const r = document.getElementById('results').getBoundingClientRect();
-      const hH = ui.helper.height();
-      // ui.position is in DOCUMENT coords (appendTo body); shift viewport bounds
-      // by the page scroll so the helper isn't walled off from lower tiles once
-      // the page is scrolled (see the search-result draggable above).
-      const sx = window.scrollX, sy = window.scrollY;
-      if (ui.position.left < r.left + sx) ui.position.left = r.left + sx;
-      if (ui.position.top < sy) ui.position.top = sy;
-      if (ui.position.top + hH > sy + window.innerHeight)
-        ui.position.top = sy + window.innerHeight - hH;
-    }
-  });
+  makeResultDraggable(img);
   $(img).css({ height: $('#results').width() / 2 });
   $('#results').append(img);
 }
