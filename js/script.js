@@ -58,21 +58,34 @@ function updateTitlesHeight() {
 
   $titles.css('justify-content', 'flex-start');
 
-  // Distribute the titles evenly across the full chart height (not per-tile),
-  // so the list always spans top-to-bottom without overflowing. The font is
-  // shrunk as needed so rows never overlap and the last title ends near the
-  // chart bottom.
-  const slot = chartH / n;
-  const desiredLineH = Math.round(fs * 1.35);
-  const lineH = Math.max(6, Math.min(desiredLineH, Math.floor(slot)));
-  const titleFs = lineH / 1.35;
+  // Distribute the titles evenly across the region from the TOP of the first
+  // titled tile to the BOTTOM of the last titled tile. Anchoring to real tile
+  // edges (not centers) is correct because tile sizes differ a lot between
+  // tiers. The font is kept at a fixed size — never shrunk.
+  const allTiles = document.querySelectorAll('#chart img.tile');
+  const titlesTop = titlesEl.getBoundingClientRect().top;
+  const lineH = Math.round(fs * 1.35);
+
+  const firstTile = allTiles[parseInt($items.first()[0].dataset.tileIndex)];
+  const lastTile = allTiles[parseInt($items.last()[0].dataset.tileIndex)];
+  let top = pt;
+  let bottom = chartH;
+  if (firstTile) {
+    const r = firstTile.getBoundingClientRect();
+    top = r.top - titlesTop;
+  }
+  if (lastTile) {
+    const r = lastTile.getBoundingClientRect();
+    bottom = r.bottom - titlesTop;
+  }
+  const slot = (bottom - top) / n;
 
   let k = 0;
   $items.each(function () {
-    this.style.fontSize = titleFs + 'px';
-    this.style.lineHeight = lineH + 'px';
-    this.style.height = lineH + 'px';
-    const centerY = (k + 0.5) * slot;
+    this.style.fontSize = '';
+    this.style.lineHeight = '';
+    this.style.height = '';
+    const centerY = top + (k + 0.5) * slot;
     this.style.position = 'absolute';
     this.style.top = (centerY - lineH / 2) + 'px';
     this.style.left = '0';
@@ -88,7 +101,7 @@ function updateTitlesHeight() {
     titlesEl.style.maxWidth = 'none';
 
     const canvasCtx = document.createElement('canvas').getContext('2d');
-    canvasCtx.font = `${titleFs}px ${style.fontFamily}`;
+    canvasCtx.font = style.font;
     const padRight = parseFloat(style.paddingRight) || 0;
 
     let maxTextW = 0;

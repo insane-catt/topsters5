@@ -103,16 +103,11 @@ module.exports = async (req, res) => {
 
   let titleColW = 0;
   let fontSize = 14;
-  let lineH = 18;
 
   if (showTitles) {
-    const N = nonEmptyTitles.length;
-    // Shrink the font as needed so the whole title list fits within the chart
-    // height (last title ends near the chart bottom instead of overflowing).
-    const availableH = totalH - 2 * outerPad;
-    const desiredLineH = Math.round((CHART_W / 50) * 1.35);
-    lineH = Math.min(desiredLineH, Math.floor(availableH / N));
-    fontSize = Math.max(8, Math.round(lineH / 1.35));
+    // Fixed font size — never shrink it, and never squeeze long titles
+    // horizontally (the column is made as wide as the longest title needs).
+    fontSize = Math.round(CHART_W / 50);
 
     const measureCtx = createCanvas(1, 1).getContext('2d');
     measureCtx.font = `${fontSize}px ${fontFamily}`;
@@ -121,23 +116,27 @@ module.exports = async (req, res) => {
       const w = measureCtx.measureText(t).width;
       if (w > maxW) maxW = w;
     }
-    titleColW = Math.min(Math.ceil(maxW) + 40, 800);
+    titleColW = Math.ceil(maxW) + 40;
   }
 
   // Pre-compute title Y positions by distributing the titles evenly across the
-  // full chart height (not per-tile), so the list always spans top-to-bottom
-  // without overflowing. The font was shrunk above so rows never overlap.
+  // region from the TOP of the first titled tile to the BOTTOM of the last
+  // titled tile. Anchoring to the real tile edges (not centers) is correct
+  // because tile sizes differ a lot between tiers.
   let titleLayout = [];
   if (showTitles) {
     const N = nonEmptyTitles.length;
-    const availableH = totalH - 2 * outerPad;
-    const slot = availableH / N;
-    let k = 0;
+    const titledIdx = [];
     for (let i = 0; i < tileCount; i++) {
-      const t = rawTitles[i];
-      if (!t) continue;
-      titleLayout.push({ text: t, y: outerPad + (k + 0.5) * slot });
-      k++;
+      if (rawTitles[i] && positions[i]) titledIdx.push(i);
+    }
+    const fp = positions[titledIdx[0]];
+    const lp = positions[titledIdx[titledIdx.length - 1]];
+    const top = fp.y;
+    const bottom = lp.y + lp.h;
+    const slot = (bottom - top) / N;
+    for (let k = 0; k < N; k++) {
+      titleLayout.push({ text: nonEmptyTitles[k], y: top + (k + 0.5) * slot });
     }
   }
 
@@ -223,7 +222,7 @@ module.exports = async (req, res) => {
     ctx.fillStyle = '#ffffff';
     ctx.textBaseline = 'middle';
     for (const lab of titleLayout) {
-      ctx.fillText(lab.text, CHART_W + 10, lab.y, titleColW - 20);
+      ctx.fillText(lab.text, CHART_W + 10, lab.y);
     }
   }
 
