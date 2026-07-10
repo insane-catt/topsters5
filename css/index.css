@@ -7836,7 +7836,8 @@ main {
 
 #chart {
   margin: 0 auto;
-  align-content: flex-start; }
+  align-content: flex-start;
+  position: relative; }
 
 .tile {
   aspect-ratio: 1;
@@ -7850,6 +7851,38 @@ main {
 
 .tile-4 {
   width: 7.14286%; }
+
+.tile-delete {
+  position: absolute;
+  z-index: 6;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease, background-color 0.12s ease;
+  -webkit-tap-highlight-color: transparent; }
+
+.tile-delete:hover {
+  background-color: rgba(220, 40, 40, 0.92); }
+
+.tile:hover + .tile-delete,
+.tile-delete:hover {
+  opacity: 1;
+  pointer-events: auto; }
+
+@media (hover: none) {
+  .tile-delete {
+    opacity: 1;
+    pointer-events: auto; } }
 
 #titles {
   display: flex;

@@ -37,6 +37,7 @@ function resize() {
   let w = $('#results').width() / 2;
   if (w > 0) $('.result').css({ height: w });
   updateTitlesHeight();
+  refreshDeleteButtons();
 }
 
 function updateTitlesHeight() {
@@ -413,7 +414,58 @@ function repaintChart() {
   }
 
   setTimeout(updateTitlesHeight, 0);
+  // After the deferred title layout settles (it can change #chart's width and
+  // thus tile positions), reposition the delete buttons.
+  setTimeout(refreshDeleteButtons, 0);
   storeToJSON();
+}
+
+/**
+ * Adds a delete button to the top-right of each filled tile (like Topsters 3).
+ * Desktop: revealed on hover; touch screens: always shown — both handled in CSS.
+ * Clicking clears that tile's album art AND its linked title.
+ *
+ * The buttons are absolutely-positioned siblings inserted right after each
+ * filled tile inside #chart (which is position:relative). They're taken out of
+ * flex flow, so tile wrapping is unaffected, and `#chart img` still selects
+ * only the tiles, so index-based lookups elsewhere keep working.
+ */
+function refreshDeleteButtons() {
+  const chartEl = document.getElementById('chart');
+  if (!chartEl) return;
+  chartEl.querySelectorAll('.tile-delete').forEach((b) => b.remove());
+  // No buttons mid-drag — they'd steal elementFromPoint hits during touch drag.
+  if (dragIndex !== -1) return;
+  const tiles = chartEl.querySelectorAll('img.tile');
+  tiles.forEach((tile, i) => {
+    const src = chart.sources[i] || '';
+    if (!src || src.includes('blank.png') || src.startsWith('assets/')) return;
+    const w = tile.offsetWidth;
+    if (w <= 0) return;
+    // Inset by the tile's own (inner) padding so the button sits on the cover.
+    const pad = parseFloat(getComputedStyle(tile).paddingLeft) || 0;
+    const size = Math.max(13, Math.min(Math.round(w * 0.26), 30));
+    const gap = Math.max(2, Math.round(size * 0.14));
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tile-delete';
+    btn.title = 'Delete';
+    btn.setAttribute('aria-label', 'Delete');
+    btn.innerHTML = '&times;';
+    btn.style.width = size + 'px';
+    btn.style.height = size + 'px';
+    btn.style.fontSize = Math.round(size * 0.8) + 'px';
+    btn.style.left = (tile.offsetLeft + tile.offsetWidth - pad - size - gap) + 'px';
+    btn.style.top = (tile.offsetTop + pad + gap) + 'px';
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      chart.sources[i] = 'assets/images/blank.png';
+      chart.titles[i] = '';
+      repaintChart();
+    });
+    tile.insertAdjacentElement('afterend', btn);
+  });
 }
 
 /**
@@ -508,6 +560,8 @@ function generateChart() {
           width: e.target.offsetWidth,
           height: e.target.offsetHeight
         });
+        // Hide delete buttons while dragging; rebuilt on drop via repaintChart.
+        document.querySelectorAll('#chart .tile-delete').forEach((b) => b.remove());
       },
       stop: () => {
         // Always fires after drop (or when dropped on a non-droppable area).
@@ -527,6 +581,7 @@ function generateChart() {
   outerPadding();
   innerPadding();
   setTimeout(updateTitlesHeight, 0);
+  setTimeout(refreshDeleteButtons, 0);
   storeToJSON();
 }
 
@@ -998,6 +1053,8 @@ function setupTileLongPressDrag() {
       setTimeout(function() { if (helper) helper.style.transform = ''; }, 140);
 
       draggingTile.style.opacity = '0.2';
+      // Clear delete buttons so they don't intercept elementFromPoint drops.
+      refreshDeleteButtons();
       var sw = document.getElementById('chartScrollWrapper');
       if (sw) sw.style.overflow = 'hidden';
       if (window.navigator.vibrate) window.navigator.vibrate(30);
