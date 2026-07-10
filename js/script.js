@@ -208,27 +208,34 @@ function getAlbums() {
  * @param {String} ext - png or jpg
  */
 async function chartToImage(ext) {
-  const tileCount = chart.options.grid
-    ? chart.options.rows * chart.options.cols
-    : chart.options.length;
-
-  const sources = chart.sources.slice(0, tileCount).map(src => {
-    if (!src || src.includes('blank.png') || src.startsWith('assets/')) return '';
-    if (/^https?:\/\//.test(src)) return src;
-    return new URL(src, window.location.href).href;
-  });
-
-  const payload = {
-    chart: {
-      name: chart.name,
-      sources,
-      titles: chart.titles.slice(0, tileCount),
-      options: Object.assign({}, chart.options)
-    },
-    format: ext
-  };
+  const btn = document.getElementById('downloadBtn');
+  const origHTML = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm mr-1" role="status" aria-hidden="true"></span>Generating...';
+  }
 
   try {
+    const tileCount = chart.options.grid
+      ? chart.options.rows * chart.options.cols
+      : chart.options.length;
+
+    const sources = chart.sources.slice(0, tileCount).map(src => {
+      if (!src || src.includes('blank.png') || src.startsWith('assets/')) return '';
+      if (/^https?:\/\//.test(src)) return src;
+      return new URL(src, window.location.href).href;
+    });
+
+    const payload = {
+      chart: {
+        name: chart.name,
+        sources,
+        titles: chart.titles.slice(0, tileCount),
+        options: Object.assign({}, chart.options)
+      },
+      format: ext
+    };
+
     const resp = await fetch('/api/generate-chart', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -246,6 +253,11 @@ async function chartToImage(ext) {
     URL.revokeObjectURL(url);
   } catch (e) {
     alert('画像の生成に失敗しました: ' + e.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = origHTML;
+    }
   }
 }
 

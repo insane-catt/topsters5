@@ -147,21 +147,40 @@ module.exports = async (req, res) => {
     ctx.fillRect(0, 0, canvasW, Math.ceil(totalH));
   }
 
-  // Load tile images in parallel
-  const images = await Promise.all(
-    Array.from({ length: tileCount }, async (_, i) => {
-      const src = (chart.sources && chart.sources[i]) || '';
-      if (!src || src.includes('blank.png') || src.startsWith('assets/')) return null;
+  // Build list of tile sources (empty string = blank tile)
+  const tileSrcs = Array.from({ length: tileCount }, (_, i) => {
+    const src = (chart.sources && chart.sources[i]) || '';
+    if (!src || src.includes('blank.png') || src.startsWith('assets/')) return '';
+    return src;
+  });
+
+  // Fetch each unique URL once (with retry), then map tiles back to results.
+  // Deduplication avoids hammering the same URL dozens of times.
+  // Batching by CONCURRENCY prevents rate-limit failures on Cover Art Archive.
+  async function fetchWithRetry(src) {
+    for (let attempt = 0; attempt <= 2; attempt++) {
+      if (attempt > 0) await new Promise(r => setTimeout(r, attempt * 1500));
       try {
-        const resp = await fetch(src, { signal: AbortSignal.timeout(8000) });
-        if (!resp.ok) return null;
-        const buf = Buffer.from(await resp.arrayBuffer());
-        return await loadImage(buf);
-      } catch (_) {
-        return null;
-      }
-    })
-  );
+        const resp = await fetch(src, { signal: AbortSignal.timeout(15000) });
+        if (!resp.ok) {
+          if (resp.status === 429 || resp.status >= 500) continue;
+          return null;
+        }
+        return await loadImage(Buffer.from(await resp.arrayBuffer()));
+      } catch (_) { /* retry */ }
+    }
+    return null;
+  }
+
+  const uniqueUrls = [...new Set(tileSrcs.filter(Boolean))];
+  const imageCache = new Map();
+  const CONCURRENCY = 6;
+  for (let i = 0; i < uniqueUrls.length; i += CONCURRENCY) {
+    const batch = uniqueUrls.slice(i, i + CONCURRENCY);
+    const results = await Promise.all(batch.map(fetchWithRetry));
+    results.forEach((img, j) => { if (img) imageCache.set(batch[j], img); });
+  }
+  const images = tileSrcs.map(src => imageCache.get(src) || null);
 
   // Draw tiles
   for (let i = 0; i < tileCount; i++) {
