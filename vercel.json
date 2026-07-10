@@ -2,7 +2,7 @@
   "functions": {
     "api/generate-chart.js": {
       "maxDuration": 30,
-      "includeFiles": "node_modules/@napi-rs/canvas/**"
+      "includeFiles": "node_modules/@napi-rs/canvas/**,api/fonts/**"
     }
   }
 }

@@ -1,4 +1,10 @@
-const { createCanvas, loadImage } = require('@napi-rs/canvas');
+const path = require('path');
+const { createCanvas, loadImage, GlobalFonts } = require('@napi-rs/canvas');
+
+GlobalFonts.registerFromPath(
+  path.join(__dirname, 'fonts', 'NotoSansJP-Regular.ttf'),
+  'NotoSansJP'
+);
 
 const CHART_W = 1400;
 
@@ -89,8 +95,8 @@ module.exports = async (req, res) => {
   const layout = computeLayout(chart.options);
   const { positions, totalH, innerPad, tileCount, outerPad } = layout;
 
-  // Title rendering setup
-  const fontFamily = `"${chart.options.font || 'Arial'}", sans-serif`;
+  // Title rendering setup — NotoSansJP covers Latin + Japanese
+  const fontFamily = `NotoSansJP, sans-serif`;
   const rawTitles = (chart.titles || []).slice(0, tileCount);
   const nonEmptyTitles = rawTitles.filter(t => t && t.length > 0);
   const showTitles = chart.options.titles && nonEmptyTitles.length > 0;
