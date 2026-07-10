@@ -15,13 +15,15 @@ function getTileWidthFraction(i, grid, cols, length) {
 function computeLayout(options) {
   const { grid, rows, cols, length, outerPadding, innerPadding } = options;
   const outerPad = (outerPadding * 0.2 / 100) * CHART_W;
-  const innerPad = (innerPadding * 0.15 / 100) * CHART_W;
   const tileCount = grid ? rows * cols : length;
   const contentW = CHART_W - 2 * outerPad;
+  // innerPadding % is relative to parent width (contentW), same as browser CSS
+  const innerPad = (innerPadding * 0.15 / 100) * contentW;
 
   const tileSizes = Array.from({ length: tileCount }, (_, i) => {
     const frac = getTileWidthFraction(i, grid, cols, length);
-    const w = frac * CHART_W;
+    // Tile % widths are relative to contentW (the flex container's inner width)
+    const w = frac * contentW;
     return { w, h: w };
   });
 
@@ -58,7 +60,7 @@ function computeLayout(options) {
   }
   y += outerPad;
 
-  return { positions, totalH: y, outerPad, innerPad, tileCount };
+  return { positions, totalH: y, outerPad, innerPad, tileCount, contentW };
 }
 
 module.exports = async (req, res) => {
@@ -85,15 +87,41 @@ module.exports = async (req, res) => {
   }
 
   const layout = computeLayout(chart.options);
-  const { positions, totalH, innerPad, tileCount } = layout;
+  const { positions, totalH, innerPad, tileCount, outerPad } = layout;
 
-  const canvas = createCanvas(CHART_W, Math.ceil(totalH));
+  // Title rendering setup
+  const fontFamily = `"${chart.options.font || 'Arial'}", sans-serif`;
+  const rawTitles = (chart.titles || []).slice(0, tileCount);
+  const nonEmptyTitles = rawTitles.filter(t => t && t.length > 0);
+  const showTitles = chart.options.titles && nonEmptyTitles.length > 0;
+
+  let titleColW = 0;
+  let fontSize = 14;
+  let slotH = 0;
+
+  if (showTitles) {
+    const n = nonEmptyTitles.length;
+    const contentH = totalH - 2 * outerPad;
+    slotH = contentH / n;
+    fontSize = Math.max(10, Math.min(Math.floor(slotH * 0.65), 28));
+
+    const measureCtx = createCanvas(1, 1).getContext('2d');
+    measureCtx.font = `${fontSize}px ${fontFamily}`;
+    let maxW = 0;
+    for (const t of nonEmptyTitles) {
+      const w = measureCtx.measureText(t).width;
+      if (w > maxW) maxW = w;
+    }
+    titleColW = Math.ceil(maxW) + 20;
+  }
+
+  const canvasW = CHART_W + titleColW;
+  const canvas = createCanvas(canvasW, Math.ceil(totalH));
   const ctx = canvas.getContext('2d');
 
   // Background
   const bg = chart.options.background || '';
   if (bg.startsWith('url(')) {
-    // Background image: try to fetch and draw it
     try {
       const urlMatch = bg.match(/url\(["']?([^"')]+)["']?\)/);
       if (urlMatch) {
@@ -101,16 +129,16 @@ module.exports = async (req, res) => {
         if (resp.ok) {
           const buf = Buffer.from(await resp.arrayBuffer());
           const bgImg = await loadImage(buf);
-          ctx.drawImage(bgImg, 0, 0, CHART_W, Math.ceil(totalH));
+          ctx.drawImage(bgImg, 0, 0, canvasW, Math.ceil(totalH));
         }
       }
     } catch (_) {
       ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, CHART_W, Math.ceil(totalH));
+      ctx.fillRect(0, 0, canvasW, Math.ceil(totalH));
     }
   } else {
     ctx.fillStyle = bg || '#000000';
-    ctx.fillRect(0, 0, CHART_W, Math.ceil(totalH));
+    ctx.fillRect(0, 0, canvasW, Math.ceil(totalH));
   }
 
   // Load tile images in parallel
@@ -141,6 +169,21 @@ module.exports = async (req, res) => {
     const dh = pos.h - 2 * innerPad;
     if (dw <= 0 || dh <= 0) continue;
     ctx.drawImage(img, dx, dy, dw, dh);
+  }
+
+  // Draw titles
+  if (showTitles) {
+    ctx.font = `${fontSize}px ${fontFamily}`;
+    ctx.fillStyle = '#ffffff';
+    ctx.textBaseline = 'middle';
+    let j = 0;
+    for (let i = 0; i < tileCount; i++) {
+      const t = rawTitles[i] || '';
+      if (t.length === 0) continue;
+      const ty = outerPad + slotH * j + slotH / 2;
+      ctx.fillText(t, CHART_W + 10, ty);
+      j++;
+    }
   }
 
   const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/png';
