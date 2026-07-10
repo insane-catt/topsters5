@@ -164,7 +164,7 @@ function xhrGet(url, success) {
 }
 
 function checkEnter() {
-  $('#album, #artist').on('keypress', function (e) {
+  $('#albumSearch').on('keypress', function (e) {
     if (e.which === 13) {
       getAlbums();
     }
@@ -214,12 +214,10 @@ function makeResultDraggable(img) {
 }
 
 function getAlbums() {
-  let artist = $('#artist').val();
-  let album = $('#album').val();
   $('#results').html('');
-  // Last.fm's album.search takes a single query string, so combine the two
-  // fields (this matches how Topsters 3 searches — one Last.fm album query).
-  let query = [album, artist].map(s => (s || '').trim()).filter(Boolean).join(' ');
+  // Last.fm's album.search takes a single query string (artist and/or album),
+  // matching how Topsters 3 searches — one Last.fm album query.
+  let query = ($('#albumSearch').val() || '').trim();
   if (!query) return;
   // Avoids duplicate urls in results
   let sourceList = [];
