@@ -148,23 +148,37 @@ function updateTitlesHeight() {
 }
 
 /**
- * Recompute the title layout once tile images finish loading.
+ * Recompute the title layout after the browser has settled the chart layout.
  *
  * updateTitlesHeight() sizes the titles to fit the chart's rendered height, but
- * on a fresh page load (or right after an import) the tile <img>s haven't loaded
- * yet, so they measure as near-zero-height and the font gets shrunk to almost
- * nothing. Nothing re-ran the layout once the covers arrived, so the titles
- * stayed tiny. This re-runs the layout as images load (debounced, and skipped
- * mid-drag so it doesn't fight the drag repaint).
+ * there's a circular dependency in play: title width -> container width -> chart
+ * width -> tile width (%) -> tile height (aspect-ratio) -> chart height -> title
+ * font size. On a fresh page load this doesn't converge in the single pass that
+ * repaintChart() runs, so the chart is measured while still collapsed and the
+ * font is shrunk to almost nothing (and nothing re-ran it afterwards). Changing
+ * the tile count later re-runs it from an already-settled layout, which is why
+ * that appeared to "fix" the size.
+ *
+ * This re-runs the layout across two animation frames so the width/height
+ * dependency converges, and once more after the covers have had time to load.
+ * Debounced, and skipped mid-drag so it doesn't fight the drag repaint.
  */
 let titleRelayoutTimer = null;
 function scheduleTitleRelayout() {
   if (dragIndex !== -1) return;
   clearTimeout(titleRelayoutTimer);
-  titleRelayoutTimer = setTimeout(() => {
+  const run = () => {
+    if (dragIndex !== -1) return;
     updateTitlesHeight();
     refreshDeleteButtons();
-  }, 50);
+  };
+  // Two rAF passes converge the circular width/height dependency after paint...
+  requestAnimationFrame(() => {
+    run();
+    requestAnimationFrame(run);
+  });
+  // ...and one more once late-loading covers have likely arrived.
+  titleRelayoutTimer = setTimeout(run, 250);
 }
 
 /**
@@ -716,6 +730,11 @@ function loadChart(index) {
   changeFont();
   background();
   repaintChart();
+  // Re-run the title layout after the browser settles the chart size, so the
+  // circular width/height dependency converges instead of leaving the titles
+  // measured against a collapsed chart (which shrank them to almost nothing on
+  // reload). See scheduleTitleRelayout().
+  scheduleTitleRelayout();
 }
 
 /**
