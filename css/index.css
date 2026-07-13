@@ -7968,12 +7968,17 @@ input[type=radio] {
 
   main header {
     flex-shrink: 0;
+    /* Center so the plain Export button (a direct flex child) isn't stretched
+       taller than the Import/Download buttons, which sit inside .dropdown
+       wrappers and keep their content height. */
+    align-items: center;
     padding: 4px 8px;
     margin-bottom: 4px !important; }
 
   main header .btn {
     font-size: 0.7rem;
-    padding: 2px 6px; }
+    padding: 2px 6px;
+    white-space: nowrap; }
 
   /* Scroll wrapper: horizontal + vertical scroll for tall charts.
      overscroll-behavior: none prevents pull-to-refresh bounce at the top edge. */
