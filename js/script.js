@@ -21,13 +21,131 @@ let dragIndex = -1;
 // Helps with fix for when there's too many titles
 let maxHeight = false;
 
+/* ------------------------------------------------------------------ *
+ * Localization (Japanese)                                            *
+ *                                                                    *
+ * The UI ships in English (the text in index.html). When the browser *
+ * language is Japanese we swap in Japanese strings: elements carrying *
+ * a data-i18n / data-i18n-ph attribute are translated by applyI18n() *
+ * on load, and JS-generated strings go through t(key, englishText).  *
+ * ------------------------------------------------------------------ */
+const IS_JA =
+  (navigator.language || navigator.userLanguage || '')
+    .toLowerCase()
+    .indexOf('ja') === 0;
+
+const I18N_JA = {
+  'tab.charts': 'チャート',
+  'tab.options': 'オプション',
+  'tab.search': '検索',
+  'chart.create': '新しいチャートを作成',
+  'opt.optionsDown': 'オプション ▼',
+  'opt.optionsUp': 'オプション ▲',
+  'opt.grid': 'グリッド',
+  'opt.collage': 'コラージュ',
+  'opt.rows': '行',
+  'opt.cols': '列',
+  'opt.tiles': 'タイル数',
+  'opt.outerPadding': '外側の余白',
+  'opt.innerPadding': '内側の余白',
+  'opt.albumTitles': 'アルバムタイトル',
+  'opt.font': 'フォント:',
+  'opt.background': '背景: ',
+  'ph.background': 'URL / 色',
+  'search.album': 'アルバム検索:',
+  'search.custom': 'カスタム画像:',
+  'search.button': '検索',
+  'ph.albumSearch': 'アーティスト名／アルバム名',
+  'ph.imageUrl': '画像URL',
+  'ph.artist': 'アーティスト',
+  'ph.album': 'アルバム',
+  'modal.chartName': 'チャート名:',
+  'btn.cancel': 'キャンセル',
+  'btn.create': '作成',
+  'btn.no': 'いいえ',
+  'btn.yes': 'はい',
+  'btn.import': 'インポート',
+  'header.export': 'JSONにエクスポート',
+  'header.import': 'インポート',
+  'header.download': 'ダウンロード',
+  'import.json': '...JSONから',
+  'import.rym': '...RateYourMusicから',
+  'import.customImage': '...カスタム画像から',
+  'import.lastfm': '...Last.fmから',
+  'modal.jsonTitle': 'JSONインポートデータ',
+  'modal.rymTitle': 'RYMインポートデータ',
+  'modal.customTitle': 'カスタム画像',
+  'modal.file': 'ファイル',
+  'modal.url': 'URL',
+  'modal.imageFile': '画像ファイル:',
+  'modal.imageUrl': '画像URL:',
+  'modal.title': 'タイトル:',
+  'modal.lastfmTitle': 'Last.fmからインポート',
+  'modal.lastfmUser': 'Last.fmユーザー名:',
+  'modal.period': '期間:',
+  'period.overall': '全期間',
+  'period.7day': '7日間',
+  'period.1month': '1ヶ月',
+  'period.3month': '3ヶ月',
+  'period.6month': '6ヶ月',
+  'period.12month': '12ヶ月',
+  'download.jpg': '...JPGとして',
+  'download.png': '...PNGとして',
+  // Strings built in JS
+  'js.generating': '生成中...',
+  'js.genFailed': '画像の生成に失敗しました: '
+};
+
+/**
+ * Translate a key. Returns the Japanese string in a Japanese environment,
+ * otherwise the English fallback (or the key itself if none is given).
+ */
+function t(key, fallback) {
+  if (IS_JA && Object.prototype.hasOwnProperty.call(I18N_JA, key)) {
+    return I18N_JA[key];
+  }
+  return fallback !== undefined ? fallback : key;
+}
+
+/**
+ * Swap the static UI text to Japanese (no-op in other languages).
+ */
+function applyI18n() {
+  if (!IS_JA) return;
+  document.documentElement.setAttribute('lang', 'ja');
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (Object.prototype.hasOwnProperty.call(I18N_JA, key)) {
+      el.textContent = I18N_JA[key];
+    }
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-ph');
+    if (Object.prototype.hasOwnProperty.call(I18N_JA, key)) {
+      el.setAttribute('placeholder', I18N_JA[key]);
+    }
+  });
+}
+
+/**
+ * Localized "delete this chart?" confirmation text.
+ */
+function deleteConfirmText(name) {
+  return IS_JA
+    ? '「' + name + '」を削除しますか？'
+    : 'Are you sure you want to delete ' + name + '?';
+}
+
 /**
  * For options dropdown visuals
  */
 function optionsArrow() {
   let arrow = $('#optionsArrow');
-  if (arrow.html() === 'Options ▼') arrow.html('Options ▲');
-  else arrow.html('Options ▼');
+  // Toggle on the arrow glyph (▼ = collapsed) so it works in any language.
+  const collapsed = arrow.html().indexOf('▼') !== -1;
+  arrow.html(
+    collapsed ? t('opt.optionsUp', 'Options ▲') : t('opt.optionsDown', 'Options ▼')
+  );
 }
 
 /**
@@ -302,7 +420,7 @@ async function chartToImage(ext) {
   const origHTML = btn ? btn.innerHTML : '';
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm mr-1" role="status" aria-hidden="true"></span>Generating...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm mr-1" role="status" aria-hidden="true"></span>' + t('js.generating', 'Generating...');
   }
 
   try {
@@ -342,7 +460,7 @@ async function chartToImage(ext) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   } catch (e) {
-    alert('画像の生成に失敗しました: ' + e.message);
+    alert(t('js.genFailed', 'Failed to generate image: ') + e.message);
   } finally {
     if (btn) {
       btn.disabled = false;
@@ -880,7 +998,7 @@ function pickLastfmCover(images) {
 async function importFromLastfm() {
   const username = ($('#lastfmUsername').val() || '').trim();
   if (!username) {
-    alert('Last.fmのユーザー名を入力してください。');
+    alert(IS_JA ? 'Last.fmのユーザー名を入力してください。' : 'Please enter a Last.fm username.');
     return;
   }
   const period = $('#lastfmPeriod').val() || 'overall';
@@ -896,13 +1014,17 @@ async function importFromLastfm() {
       throw new Error('Server error ' + resp.status);
     }
   } catch (_) {
-    alert('Last.fmからの取得に失敗しました。時間をおいて再試行してください。');
+    alert(
+      IS_JA
+        ? 'Last.fmからの取得に失敗しました。時間をおいて再試行してください。'
+        : 'Failed to fetch from Last.fm. Please try again later.'
+    );
     return;
   }
 
   // Last.fm logical error (bad username, missing API key, etc.)
   if (data && data.error) {
-    alert('Last.fmエラー: ' + (data.message || data.error));
+    alert((IS_JA ? 'Last.fmエラー: ' : 'Last.fm error: ') + (data.message || data.error));
     return;
   }
 
@@ -913,7 +1035,11 @@ async function importFromLastfm() {
     albums = [];
   }
   if (!albums.length) {
-    alert('このユーザー・期間ではアルバムが見つかりませんでした。');
+    alert(
+      IS_JA
+        ? 'このユーザー・期間ではアルバムが見つかりませんでした。'
+        : 'No albums found for this user and period.'
+    );
     return;
   }
 
@@ -933,7 +1059,11 @@ async function importFromLastfm() {
   });
 
   if (!filled.length) {
-    alert('カバー画像のあるアルバムが見つかりませんでした。');
+    alert(
+      IS_JA
+        ? 'カバー画像のあるアルバムが見つかりませんでした。'
+        : 'No albums with cover art were found.'
+    );
     return;
   }
 
@@ -972,9 +1102,11 @@ async function importFromLastfm() {
   repaintChart(); // paints sources + titles, refreshes delete buttons, stores
 
   if (missingCovers.length) {
+    const head = IS_JA
+      ? missingCovers.length + '件のアルバムはカバー画像がないため除外しました:\n'
+      : missingCovers.length + ' album(s) were skipped (no cover art):\n';
     alert(
-      missingCovers.length +
-        '件のアルバムはカバー画像がないため除外しました:\n' +
+      head +
         missingCovers.slice(0, 20).join('\n') +
         (missingCovers.length > 20 ? '\n…' : '')
     );
@@ -1142,8 +1274,7 @@ function chartItemString(name) {
         src="assets/images/delete.svg"
         onclick="
           $('#deleteTitle').html(
-            'Are you sure you want to delete ' +
-            $(event.target).siblings('input[type=text]').val() + '?'
+            deleteConfirmText($(event.target).siblings('input[type=text]').val())
           )
           $('#btnDelete').click(() => deleteChart(event));
         "
@@ -1336,6 +1467,9 @@ function setupTileLongPressDrag() {
  * Runs when window is ready
  */
 $(() => {
+  // Localize the static UI first (before anything renders text).
+  applyI18n();
+
   let data = JSON.parse(localStorage.getItem('chartStorage'));
 
   if (data) {

@@ -26,9 +26,9 @@
       <aside class="d-flex flex-column text-white">
         <!-- Mobile Tab Bar -->
         <div id="mobileTabBar">
-          <button class="mobile-tab" onclick="mobileTab('charts')">Charts</button>
-          <button class="mobile-tab" onclick="mobileTab('options')">Options</button>
-          <button class="mobile-tab mobile-tab-active" onclick="mobileTab('search')">Search</button>
+          <button class="mobile-tab" onclick="mobileTab('charts')" data-i18n="tab.charts">Charts</button>
+          <button class="mobile-tab" onclick="mobileTab('options')" data-i18n="tab.options">Options</button>
+          <button class="mobile-tab mobile-tab-active" onclick="mobileTab('search')" data-i18n="tab.search">Search</button>
         </div>
 
         <!-- Charts Panel (desktop sidebar + mobile panel) -->
@@ -41,6 +41,7 @@
             class="btn btn-light btn-sm"
             data-toggle="modal"
             data-target="#createChartModal"
+            data-i18n="chart.create"
           >
             Create New Chart
           </button>
@@ -63,12 +64,13 @@
             aria-expanded="false"
             aria-controls="options"
             onclick="optionsArrow()"
+            data-i18n="opt.optionsDown"
             >Options &#9660;</a
           >
         </p>
         <section class="collapse" id="options">
           <div>
-            <label for="gridRadio">Grid</label>
+            <label for="gridRadio" data-i18n="opt.grid">Grid</label>
             <input
               type="radio"
               id="gridRadio"
@@ -76,7 +78,7 @@
               autocomplete="off"
               onclick="chartType(true)"
             />
-            <label for="collageRadio">Collage</label>
+            <label for="collageRadio" data-i18n="opt.collage">Collage</label>
             <input
               type="radio"
               id="collageRadio"
@@ -87,7 +89,7 @@
           </div>
           <table id="chartSize">
             <tr>
-              <td><label for="rows">Rows</label></td>
+              <td><label for="rows" data-i18n="opt.rows">Rows</label></td>
               <td>
                 <input
                   type="range"
@@ -101,7 +103,7 @@
               <td id="rowsNum"></td>
             </tr>
             <tr>
-              <td><label for="cols">Cols</label></td>
+              <td><label for="cols" data-i18n="opt.cols">Cols</label></td>
               <td>
                 <input
                   type="range"
@@ -116,7 +118,7 @@
             </tr>
           </table>
           <div id="chartLength">
-            <label for="tiles">Tiles</label>
+            <label for="tiles" data-i18n="opt.tiles">Tiles</label>
             <input
               type="number"
               id="tiles"
@@ -128,7 +130,7 @@
           </div>
           <table>
             <tr>
-              <td><label for="outerPadding">Outer Padding</label></td>
+              <td><label for="outerPadding" data-i18n="opt.outerPadding">Outer Padding</label></td>
               <td>
                 <input
                   type="range"
@@ -142,7 +144,7 @@
               <td id="outerPaddingNum"></td>
             </tr>
             <tr>
-              <td><label for="innerPadding">Inner Padding</label></td>
+              <td><label for="innerPadding" data-i18n="opt.innerPadding">Inner Padding</label></td>
               <td>
                 <input
                   type="range"
@@ -157,8 +159,8 @@
             </tr>
           </table>
           <input type="checkbox" id="titleToggle" autocomplete="off" onclick="titleToggle()" />
-          <label for="titleToggle">Album Titles</label><br />
-          <label for="fonts">Font:</label>
+          <label for="titleToggle" data-i18n="opt.albumTitles">Album Titles</label><br />
+          <label for="fonts" data-i18n="opt.font">Font:</label>
           <select id="fonts" onchange="changeFont()">
             <option value="Arial">Arial</option>
             <option value="Courier">Courier</option>
@@ -173,12 +175,13 @@
           <div
             class="d-flex flex-row justify-content-between align-items-center"
           >
-            <label for="background">Background: </label>
+            <label for="background" data-i18n="opt.background">Background: </label>
             <input
               type="text"
               id="background"
               class="w-50"
               placeholder="URL / Color"
+              data-i18n-ph="ph.background"
               onchange="background()"
             />
             <input type="color" id="colorPicker" onchange="backgroundColor()" />
@@ -195,8 +198,8 @@
         <div
           class="d-flex flex-row justify-content-between align-items-center mb-2"
         >
-          <span>Album Search:</span>
-          <button class="btn btn-light btn-sm" onclick="getAlbums()">
+          <span data-i18n="search.album">Album Search:</span>
+          <button class="btn btn-light btn-sm" onclick="getAlbums()" data-i18n="search.button">
             Search
           </button>
         </div>
@@ -205,6 +208,7 @@
             id="albumSearch"
             type="text"
             placeholder="Artist and/or album"
+            data-i18n-ph="ph.albumSearch"
             class="w-100"
             onfocus="checkEnter()"
           />
@@ -213,8 +217,8 @@
         <div
           class="d-flex flex-row justify-content-between align-items-center mb-2"
         >
-          <span>Custom Image:</span>
-          <button class="btn btn-light btn-sm" onclick="addCustomImage()">
+          <span data-i18n="search.custom">Custom Image:</span>
+          <button class="btn btn-light btn-sm" onclick="addCustomImage()" data-i18n="search.button">
             Search
           </button>
         </div>
@@ -222,6 +226,7 @@
           id="customImageURL"
           type="text"
           placeholder="Image URL"
+          data-i18n-ph="ph.imageUrl"
           class="w-100 mb-1"
         />
         <div class="d-flex flex-row mb-3">
@@ -229,12 +234,14 @@
             id="customArtist"
             type="text"
             placeholder="Artist"
+            data-i18n-ph="ph.artist"
             class="w-50"
           />
           <input
             id="customAlbum"
             type="text"
             placeholder="Album"
+            data-i18n-ph="ph.album"
             class="w-50"
           />
         </div>
@@ -259,7 +266,7 @@
           <div class="modal-dialog" role="document">
             <div class="modal-content">
               <div class="modal-header">
-                <h5 class="modal-title">Create New Chart</h5>
+                <h5 class="modal-title" data-i18n="chart.create">Create New Chart</h5>
                 <button
                   class="close"
                   data-dismiss="modal"
@@ -270,13 +277,14 @@
                 </button>
               </div>
               <div class="modal-body">
-                <label for="chartName">Name of Chart:</label><br />
+                <label for="chartName" data-i18n="modal.chartName">Name of Chart:</label><br />
                 <input type="text" id="chartName" onfocus="checkEnter()" />
               </div>
               <div class="modal-footer">
                 <button
                   class="btn btn-light text-dark rounded-0"
                   data-dismiss="modal"
+                  data-i18n="btn.cancel"
                 >
                   Cancel
                 </button>
@@ -285,6 +293,7 @@
                   class="btn btn-light text-dark rounded-0"
                   onclick="newChart()"
                   data-dismiss="modal"
+                  data-i18n="btn.create"
                 >
                   Create
                 </button>
@@ -319,6 +328,7 @@
                 <button
                   class="btn btn-light text-dark rounded-0"
                   data-dismiss="modal"
+                  data-i18n="btn.no"
                 >
                   No
                 </button>
@@ -326,6 +336,7 @@
                   id="btnDelete"
                   class="btn btn-light text-dark rounded-0"
                   data-dismiss="modal"
+                  data-i18n="btn.yes"
                 >
                   Yes
                 </button>
@@ -342,6 +353,7 @@
             id="exportJSON"
             class="btn btn-light rounded-0 mr-2"
             onclick="exportToJSON()"
+            data-i18n="header.export"
           >
             Export to JSON
           </button>
@@ -354,6 +366,7 @@
               data-toggle="dropdown"
               aria-haspopup="true"
               aria-expanded="false"
+              data-i18n="header.import"
             >
               Import
             </button>
@@ -365,6 +378,7 @@
                 class="dropdown-item"
                 data-toggle="modal"
                 data-target="#jsonImportModal"
+                data-i18n="import.json"
               >
                 ...from JSON
               </li>
@@ -372,6 +386,7 @@
                 class="dropdown-item"
                 data-toggle="modal"
                 data-target="#rymImportModal"
+                data-i18n="import.rym"
               >
                 ...from RateYourMusic
               </li>
@@ -379,6 +394,7 @@
                 class="dropdown-item"
                 data-toggle="modal"
                 data-target="#imgImportModal"
+                data-i18n="import.customImage"
               >
                 ...from Custom Image
               </li>
@@ -386,6 +402,7 @@
                 class="dropdown-item"
                 data-toggle="modal"
                 data-target="#lastfmImportModal"
+                data-i18n="import.lastfm"
               >
                 ...from Last.fm
               </li>
@@ -404,7 +421,7 @@
             <div class="modal-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title">JSON Import Data</h5>
+                  <h5 class="modal-title" data-i18n="modal.jsonTitle">JSON Import Data</h5>
                   <button
                     class="close"
                     data-dismiss="modal"
@@ -421,6 +438,7 @@
                   <button
                     class="btn btn-light text-dark rounded-0"
                     data-dismiss="modal"
+                    data-i18n="btn.cancel"
                   >
                     Cancel
                   </button>
@@ -429,6 +447,7 @@
                     class="btn btn-light text-dark rounded-0"
                     onclick="importFromJSON()"
                     data-dismiss="modal"
+                    data-i18n="btn.import"
                   >
                     Import
                   </button>
@@ -449,7 +468,7 @@
             <div class="modal-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title">RYM Import Data</h5>
+                  <h5 class="modal-title" data-i18n="modal.rymTitle">RYM Import Data</h5>
                   <button
                     class="close"
                     data-dismiss="modal"
@@ -466,6 +485,7 @@
                   <button
                     class="btn btn-light text-dark rounded-0"
                     data-dismiss="modal"
+                    data-i18n="btn.cancel"
                   >
                     Cancel
                   </button>
@@ -474,6 +494,7 @@
                     class="btn btn-light text-dark rounded-0"
                     onclick="importFromRYM()"
                     data-dismiss="modal"
+                    data-i18n="btn.import"
                   >
                     Import
                   </button>
@@ -494,7 +515,7 @@
             <div class="modal-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title">Custom Image</h5>
+                  <h5 class="modal-title" data-i18n="modal.customTitle">Custom Image</h5>
                   <button
                     class="close"
                     data-dismiss="modal"
@@ -511,29 +532,30 @@
                     id="imgImportFileRadio"
                     onclick="imgImportMode(true)"
                   />
-                  <label for="imgImportFileRadio">File</label>
+                  <label for="imgImportFileRadio" data-i18n="modal.file">File</label>
                   <input
                     type="radio"
                     name="imgImportRadio"
                     id="imgImportURLRadio"
                     onclick="imgImportMode(false)"
                   />
-                  <label for="imgImportURLRadio">URL</label>
+                  <label for="imgImportURLRadio" data-i18n="modal.url">URL</label>
                   <div id="imgImportFileDiv">
-                    <label for="imgImportFile">Image File:</label><br />
+                    <label for="imgImportFile" data-i18n="modal.imageFile">Image File:</label><br />
                     <input id="imgImportFile" type="file" accept="image/*" />
                   </div>
                   <div id="imgImportURLDiv">
-                    <label for="imgImportURL">Image URL:</label><br />
+                    <label for="imgImportURL" data-i18n="modal.imageUrl">Image URL:</label><br />
                     <input id="imgImportURL" type="text" />
                   </div>
-                  <label for="imgTitle" class="mt-3">Title:</label><br />
+                  <label for="imgTitle" class="mt-3" data-i18n="modal.title">Title:</label><br />
                   <input type="text" id="imgTitle" />
                 </div>
                 <div class="modal-footer">
                   <button
                     class="btn btn-light text-dark rounded-0"
                     data-dismiss="modal"
+                    data-i18n="btn.cancel"
                   >
                     Cancel
                   </button>
@@ -542,6 +564,7 @@
                     class="btn btn-light text-dark rounded-0"
                     onclick="importFromImage()"
                     data-dismiss="modal"
+                    data-i18n="btn.import"
                   >
                     Import
                   </button>
@@ -562,7 +585,7 @@
             <div class="modal-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title">Import from Last.fm</h5>
+                  <h5 class="modal-title" data-i18n="modal.lastfmTitle">Import from Last.fm</h5>
                   <button
                     class="close"
                     data-dismiss="modal"
@@ -573,27 +596,28 @@
                   </button>
                 </div>
                 <div class="modal-body">
-                  <label for="lastfmUsername">Last.fm Username:</label><br />
+                  <label for="lastfmUsername" data-i18n="modal.lastfmUser">Last.fm Username:</label><br />
                   <input
                     type="text"
                     id="lastfmUsername"
                     autocomplete="off"
                     onfocus="checkEnter()"
                   /><br />
-                  <label for="lastfmPeriod" class="mt-3">Period:</label><br />
+                  <label for="lastfmPeriod" class="mt-3" data-i18n="modal.period">Period:</label><br />
                   <select id="lastfmPeriod">
-                    <option value="overall">Overall</option>
-                    <option value="7day">7 days</option>
-                    <option value="1month">1 month</option>
-                    <option value="3month">3 months</option>
-                    <option value="6month">6 months</option>
-                    <option value="12month">12 months</option>
+                    <option value="overall" data-i18n="period.overall">Overall</option>
+                    <option value="7day" data-i18n="period.7day">7 days</option>
+                    <option value="1month" data-i18n="period.1month">1 month</option>
+                    <option value="3month" data-i18n="period.3month">3 months</option>
+                    <option value="6month" data-i18n="period.6month">6 months</option>
+                    <option value="12month" data-i18n="period.12month">12 months</option>
                   </select>
                 </div>
                 <div class="modal-footer">
                   <button
                     class="btn btn-light text-dark rounded-0"
                     data-dismiss="modal"
+                    data-i18n="btn.cancel"
                   >
                     Cancel
                   </button>
@@ -602,6 +626,7 @@
                     class="btn btn-light text-dark rounded-0"
                     onclick="importFromLastfm()"
                     data-dismiss="modal"
+                    data-i18n="btn.import"
                   >
                     Import
                   </button>
@@ -618,6 +643,7 @@
               data-toggle="dropdown"
               aria-haspopup="true"
               aria-expanded="false"
+              data-i18n="header.download"
             >
               Download
             </button>
@@ -625,10 +651,10 @@
               class="dropdown-menu dropdown-menu-right"
               aria-labelledby="downloadBtn"
             >
-              <li class="dropdown-item" onclick="chartToImage('jpg')">
+              <li class="dropdown-item" onclick="chartToImage('jpg')" data-i18n="download.jpg">
                 ...as JPG
               </li>
-              <li class="dropdown-item" onclick="chartToImage('png')">
+              <li class="dropdown-item" onclick="chartToImage('png')" data-i18n="download.png">
                 ...as PNG
               </li>
             </ul>
