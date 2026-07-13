@@ -148,6 +148,26 @@ function updateTitlesHeight() {
 }
 
 /**
+ * Recompute the title layout once tile images finish loading.
+ *
+ * updateTitlesHeight() sizes the titles to fit the chart's rendered height, but
+ * on a fresh page load (or right after an import) the tile <img>s haven't loaded
+ * yet, so they measure as near-zero-height and the font gets shrunk to almost
+ * nothing. Nothing re-ran the layout once the covers arrived, so the titles
+ * stayed tiny. This re-runs the layout as images load (debounced, and skipped
+ * mid-drag so it doesn't fight the drag repaint).
+ */
+let titleRelayoutTimer = null;
+function scheduleTitleRelayout() {
+  if (dragIndex !== -1) return;
+  clearTimeout(titleRelayoutTimer);
+  titleRelayoutTimer = setTimeout(() => {
+    updateTitlesHeight();
+    refreshDeleteButtons();
+  }, 50);
+}
+
+/**
  * Ajax request
  * @param {String} url
  * @param {Function} success
@@ -604,6 +624,11 @@ function generateChart() {
       }
     });
   }
+
+  // Once each cover finishes loading, recompute the title layout so it's sized
+  // to the tiles' real heights (fixes titles rendering tiny on reload/import,
+  // when images aren't loaded yet at first measure).
+  $('#chart img.tile').on('load', scheduleTitleRelayout);
 
   resize();
   outerPadding();
@@ -1304,6 +1329,11 @@ $(() => {
   $('#imgImportURLDiv').hide();
   $('#imgImportFileRadio').prop('checked', true);
   window.onresize = resize;
+
+  // Once every resource (all cover images) has loaded, recompute the title
+  // layout: on reload the first measure happens before images load, which
+  // otherwise leaves the titles shrunk to almost nothing.
+  $(window).on('load', resize);
 
   // Album Search: focusing the box runs the search (when it has a query), so
   // there's no need to press Enter or click Search.
