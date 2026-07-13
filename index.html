@@ -379,6 +379,13 @@
               >
                 ...from Custom Image
               </li>
+              <li
+                class="dropdown-item"
+                data-toggle="modal"
+                data-target="#lastfmImportModal"
+              >
+                ...from Last.fm
+              </li>
             </ul>
           </div>
 
@@ -531,6 +538,66 @@
                     id="btnCreate"
                     class="btn btn-light text-dark rounded-0"
                     onclick="importFromImage()"
+                    data-dismiss="modal"
+                  >
+                    Import
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Last.fm Import Modal -->
+          <div
+            class="modal fade"
+            id="lastfmImportModal"
+            tabindex="-1"
+            role="dialog"
+            aria-labelledby="lastfmImportModal"
+            aria-hidden="true"
+          >
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Import from Last.fm</h5>
+                  <button
+                    class="close"
+                    data-dismiss="modal"
+                    aria-label="Close"
+                    onClick="storeToJSON()"
+                  >
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <label for="lastfmUsername">Last.fm Username:</label><br />
+                  <input
+                    type="text"
+                    id="lastfmUsername"
+                    autocomplete="off"
+                    onfocus="checkEnter()"
+                  /><br />
+                  <label for="lastfmPeriod" class="mt-3">Period:</label><br />
+                  <select id="lastfmPeriod">
+                    <option value="overall">Overall</option>
+                    <option value="7day">7 days</option>
+                    <option value="1month">1 month</option>
+                    <option value="3month">3 months</option>
+                    <option value="6month">6 months</option>
+                    <option value="12month">12 months</option>
+                  </select>
+                </div>
+                <div class="modal-footer">
+                  <button
+                    class="btn btn-light text-dark rounded-0"
+                    data-dismiss="modal"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    id="btnLastfmImport"
+                    class="btn btn-light text-dark rounded-0"
+                    onclick="importFromLastfm()"
                     data-dismiss="modal"
                   >
                     Import

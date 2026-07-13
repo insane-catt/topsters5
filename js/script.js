@@ -174,6 +174,11 @@ function checkEnter() {
       $('#btnCreate').click();
     }
   });
+  $('#lastfmUsername').on('keypress', function (e) {
+    if (e.which === 13) {
+      $('#btnLastfmImport').click();
+    }
+  });
 }
 
 /**
@@ -795,6 +800,136 @@ function importFromImage() {
     : $('#imgImportURL').val();
   chart.titles[index] = $('#imgTitle').val();
   repaintChart();
+}
+
+/**
+ * Pick the best (largest) available cover from a Last.fm image[] array.
+ * @param {Array} images
+ * @returns {String} cover URL, or '' if none
+ */
+function pickLastfmCover(images) {
+  if (!Array.isArray(images) || !images.length) return '';
+  let bySize = {};
+  images.forEach((im) => {
+    if (im && im['#text']) bySize[im.size] = im['#text'];
+  });
+  return (
+    bySize.extralarge ||
+    bySize.large ||
+    bySize.medium ||
+    bySize.small ||
+    images[images.length - 1]['#text'] ||
+    ''
+  );
+}
+
+/**
+ * Import a chart from a Last.fm user's top albums (like Topsters 3).
+ * Fetches the user's most-played albums for the chosen period, then fills the
+ * current chart in grid mode from the top down.
+ */
+async function importFromLastfm() {
+  const username = ($('#lastfmUsername').val() || '').trim();
+  if (!username) {
+    alert('Last.fmのユーザー名を入力してください。');
+    return;
+  }
+  const period = $('#lastfmPeriod').val() || 'overall';
+
+  let data;
+  try {
+    const resp = await fetch(
+      `/api/lastfm-topalbums?user=${encodeURIComponent(username)}` +
+        `&period=${encodeURIComponent(period)}&limit=144`
+    );
+    data = await resp.json();
+    if (!resp.ok && !(data && data.error)) {
+      throw new Error('Server error ' + resp.status);
+    }
+  } catch (_) {
+    alert('Last.fmからの取得に失敗しました。時間をおいて再試行してください。');
+    return;
+  }
+
+  // Last.fm logical error (bad username, missing API key, etc.)
+  if (data && data.error) {
+    alert('Last.fmエラー: ' + (data.message || data.error));
+    return;
+  }
+
+  let albums = [];
+  try {
+    albums = data.topalbums.album || [];
+  } catch (_) {
+    albums = [];
+  }
+  if (!albums.length) {
+    alert('このユーザー・期間ではアルバムが見つかりませんでした。');
+    return;
+  }
+
+  // Keep only albums that have cover art (matches Topsters 3); remember the
+  // rest so we can tell the user what was skipped.
+  const missingCovers = [];
+  const filled = [];
+  albums.forEach((al) => {
+    const cover = pickLastfmCover(al.image || []);
+    const artist = al.artist && al.artist.name ? al.artist.name : '';
+    const title = [artist, al.name].filter(Boolean).join(' - ');
+    if (!cover) {
+      missingCovers.push(title || al.name || 'Unknown');
+      return;
+    }
+    filled.push({ source: cover, title: title });
+  });
+
+  if (!filled.length) {
+    alert('カバー画像のあるアルバムが見つかりませんでした。');
+    return;
+  }
+
+  // Reset all 144 tiles, then fill from the top with the imported albums.
+  for (let i = 0; i < 144; i++) {
+    chart.sources[i] = 'assets/images/blank.png';
+    chart.titles[i] = '';
+  }
+  filled.forEach((item, i) => {
+    if (i >= 144) return;
+    chart.sources[i] = item.source;
+    chart.titles[i] = item.title;
+  });
+
+  // Size a near-square grid that fits the imported count (capped at 12x12=144),
+  // switch to grid mode, and show titles — like Topsters 3.
+  const count = Math.min(filled.length, 144);
+  const cols = Math.min(12, Math.ceil(Math.sqrt(count)));
+  const rows = Math.min(12, Math.ceil(count / cols));
+
+  chart.options.grid = true;
+  chart.options.rows = rows;
+  chart.options.cols = cols;
+  chart.options.titles = true;
+
+  // Sync the option controls to the new values.
+  $('#gridRadio').prop('checked', true);
+  $('#rows').val(rows);
+  $('#cols').val(cols);
+  $('#rowsNum').html(rows);
+  $('#colsNum').html(cols);
+  $('#titleToggle').prop('checked', true);
+  $('#titles').show();
+
+  chartType(true); // applies grid layout + regenerates tiles
+  repaintChart(); // paints sources + titles, refreshes delete buttons, stores
+
+  if (missingCovers.length) {
+    alert(
+      missingCovers.length +
+        '件のアルバムはカバー画像がないため除外しました:\n' +
+        missingCovers.slice(0, 20).join('\n') +
+        (missingCovers.length > 20 ? '\n…' : '')
+    );
+  }
 }
 
 /**
