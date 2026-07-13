@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Dark rounded background, matching the app's black chart canvas -->
+  <rect width="64" height="64" rx="12" fill="#111111"/>
+  <!-- 3x3 grid of album tiles (the Topsters collage motif) -->
+  <g>
+    <rect x="10" y="10" width="13" height="13" rx="2" fill="#e63946"/>
+    <rect x="25.5" y="10" width="13" height="13" rx="2" fill="#f1a208"/>
+    <rect x="41" y="10" width="13" height="13" rx="2" fill="#2a9d8f"/>
+
+    <rect x="10" y="25.5" width="13" height="13" rx="2" fill="#457b9d"/>
+    <rect x="25.5" y="25.5" width="13" height="13" rx="2" fill="#ffffff"/>
+    <rect x="41" y="25.5" width="13" height="13" rx="2" fill="#e76f51"/>
+
+    <rect x="10" y="41" width="13" height="13" rx="2" fill="#8338ec"/>
+    <rect x="25.5" y="41" width="13" height="13" rx="2" fill="#06d6a0"/>
+    <rect x="41" y="41" width="13" height="13" rx="2" fill="#ffd166"/>
+  </g>
+</svg>
