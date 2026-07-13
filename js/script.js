@@ -674,9 +674,10 @@ function loadChart(index) {
   $('#innerPadding').val(chart.options.innerPadding);
 
   $('#titleToggle').prop('checked', chart.options.titles);
-  if (!chart.options.titles) {
-    $('#titles').hide();
-  }
+  // Set visibility explicitly for BOTH states so #titles never desyncs from the
+  // checkbox when switching between charts (otherwise the next title toggle on a
+  // chart whose titles were left hidden would flip the state the wrong way).
+  $('#titles').toggle(!!chart.options.titles);
 
   $('#fonts').val(chart.options.font);
   $('#background').val(chart.options.background);
@@ -885,8 +886,12 @@ function innerPadding() {
  * Show or hide titles list
  */
 function titleToggle() {
-  $('#titles').toggle();
-  chart.options.titles = !chart.options.titles;
+  // Derive from the checkbox (the user just clicked it) and apply the visibility
+  // explicitly, rather than relative toggles — otherwise, if #titles' visibility
+  // ever desyncs from chart.options.titles (e.g. after switching charts), the
+  // next click inverts the on/off state.
+  chart.options.titles = $('#titleToggle').prop('checked');
+  $('#titles').toggle(chart.options.titles);
   if (chart.options.grid) {
     if (chart.options.titles) $('#chartContainer').css({ width: '100%' });
     else

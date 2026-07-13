@@ -70,6 +70,7 @@
               type="radio"
               id="gridRadio"
               name="chartType"
+              autocomplete="off"
               onclick="chartType(true)"
             />
             <label for="collageRadio">Collage</label>
@@ -77,6 +78,7 @@
               type="radio"
               id="collageRadio"
               name="chartType"
+              autocomplete="off"
               onclick="chartType(false)"
             />
           </div>
@@ -89,6 +91,7 @@
                   id="rows"
                   min="1"
                   max="12"
+                  autocomplete="off"
                   oninput="chartSize()"
                 />
               </td>
@@ -102,6 +105,7 @@
                   id="cols"
                   min="1"
                   max="12"
+                  autocomplete="off"
                   oninput="chartSize()"
                 />
               </td>
@@ -115,6 +119,7 @@
               id="tiles"
               min="1"
               max="100"
+              autocomplete="off"
               onchange="chartLength()"
             />
           </div>
@@ -127,6 +132,7 @@
                   id="outerPadding"
                   min="0"
                   max="30"
+                  autocomplete="off"
                   oninput="outerPadding()"
                 />
               </td>
@@ -140,13 +146,14 @@
                   id="innerPadding"
                   min="0"
                   max="20"
+                  autocomplete="off"
                   oninput="innerPadding()"
                 />
               </td>
               <td id="innerPaddingNum"></td>
             </tr>
           </table>
-          <input type="checkbox" id="titleToggle" onclick="titleToggle()" />
+          <input type="checkbox" id="titleToggle" autocomplete="off" onclick="titleToggle()" />
           <label for="titleToggle">Album Titles</label><br />
           <label for="fonts">Font:</label>
           <select id="fonts" onchange="changeFont()">
