@@ -148,37 +148,45 @@ function updateTitlesHeight() {
 }
 
 /**
- * Recompute the title layout after the browser has settled the chart layout.
+ * Run updateTitlesHeight() to convergence in a single synchronous pass.
  *
- * updateTitlesHeight() sizes the titles to fit the chart's rendered height, but
- * there's a circular dependency in play: title width -> container width -> chart
- * width -> tile width (%) -> tile height (aspect-ratio) -> chart height -> title
- * font size. On a fresh page load this doesn't converge in the single pass that
- * repaintChart() runs, so the chart is measured while still collapsed and the
- * font is shrunk to almost nothing (and nothing re-ran it afterwards). Changing
- * the tile count later re-runs it from an already-settled layout, which is why
- * that appeared to "fix" the size.
+ * The title sizing has a circular dependency: title width -> container width ->
+ * chart width -> tile width (%) -> tile height (aspect-ratio) -> chart height ->
+ * title font size. A single updateTitlesHeight() call doesn't reach the stable
+ * size, so previously the layout only "settled" over many separate passes (one
+ * per cover load), which the user saw as the chart shrinking step by step.
  *
- * This re-runs the layout across two animation frames so the width/height
- * dependency converges, and once more after the covers have had time to load.
- * Debounced, and skipped mid-drag so it doesn't fight the drag repaint.
+ * Because .tile has aspect-ratio:1, the tiles reserve their (square) height
+ * before the covers load, so the layout can be settled immediately. Calling
+ * updateTitlesHeight() repeatedly in one JS task forces a synchronous relayout
+ * each time but paints only once at the end — so the chart jumps straight to its
+ * final size with no visible stepping. We stop as soon as the container width
+ * stops changing (or after a small cap).
+ */
+function settleTitles() {
+  if (dragIndex !== -1) return;
+  const containerEl = document.getElementById('chartContainer');
+  let prev = -1;
+  for (let i = 0; i < 12; i++) {
+    updateTitlesHeight();
+    const w = containerEl ? containerEl.offsetWidth : 0;
+    if (Math.abs(w - prev) < 0.5) break;
+    prev = w;
+  }
+  refreshDeleteButtons();
+}
+
+/**
+ * Settle the title layout after the next paint (debounced, skipped mid-drag).
+ * Used from load/resize/import paths.
  */
 let titleRelayoutTimer = null;
 function scheduleTitleRelayout() {
   if (dragIndex !== -1) return;
   clearTimeout(titleRelayoutTimer);
-  const run = () => {
-    if (dragIndex !== -1) return;
-    updateTitlesHeight();
-    refreshDeleteButtons();
-  };
-  // Two rAF passes converge the circular width/height dependency after paint...
-  requestAnimationFrame(() => {
-    run();
-    requestAnimationFrame(run);
-  });
-  // ...and one more once late-loading covers have likely arrived.
-  titleRelayoutTimer = setTimeout(run, 250);
+  titleRelayoutTimer = setTimeout(() => {
+    requestAnimationFrame(settleTitles);
+  }, 60);
 }
 
 /**
@@ -639,11 +647,6 @@ function generateChart() {
     });
   }
 
-  // Once each cover finishes loading, recompute the title layout so it's sized
-  // to the tiles' real heights (fixes titles rendering tiny on reload/import,
-  // when images aren't loaded yet at first measure).
-  $('#chart img.tile').on('load', scheduleTitleRelayout);
-
   resize();
   outerPadding();
   innerPadding();
@@ -653,6 +656,8 @@ function generateChart() {
   // again — mirroring how the tiles themselves persist. It also handles the
   // deferred title layout, delete-button refresh, and storeToJSON.
   repaintChart();
+  // Settle the title layout to its final size in one shot (no visible stepping).
+  scheduleTitleRelayout();
 }
 
 /**
@@ -1349,10 +1354,9 @@ $(() => {
   $('#imgImportFileRadio').prop('checked', true);
   window.onresize = resize;
 
-  // Once every resource (all cover images) has loaded, recompute the title
-  // layout: on reload the first measure happens before images load, which
-  // otherwise leaves the titles shrunk to almost nothing.
-  $(window).on('load', resize);
+  // Safety net: re-settle the title layout once every resource has loaded, in
+  // case a late reflow nudged the sizes.
+  $(window).on('load', scheduleTitleRelayout);
 
   // Album Search: focusing the box runs the search (when it has a query), so
   // there's no need to press Enter or click Search.
