@@ -348,6 +348,26 @@
 
       <main class="p-4 flex-grow-1">
         <header class="d-flex flex-row justify-content-end mb-4">
+          <!-- Mobile-only view toggles: collapse the nav / fit the whole chart.
+               Hidden on desktop via CSS; margin-right:auto pushes them to the
+               left so Export/Import/Download stay on the right. -->
+          <div class="mobile-header-tools">
+            <button
+              id="navToggleBtn"
+              type="button"
+              class="btn btn-light rounded-0"
+              onclick="toggleNav()"
+              aria-pressed="false"
+            >&#9776;</button>
+            <button
+              id="fitToggleBtn"
+              type="button"
+              class="btn btn-light rounded-0"
+              onclick="toggleFitMode()"
+              aria-pressed="false"
+            >&#10530;</button>
+          </div>
+
           <!-- Export Button -->
           <div class="dropdown">
             <button

@@ -7943,6 +7943,10 @@ input[type=radio] {
 #mobileTabBar {
   display: none; }
 
+/* Mobile-only header toggles (nav collapse / fit whole chart) — hidden on desktop */
+.mobile-header-tools {
+  display: none; }
+
 @media (max-width: 767.98px) {
   /* Stack layout: chart on top, nav on bottom */
   #container {
@@ -7986,6 +7990,31 @@ input[type=radio] {
     font-size: 0.7rem;
     padding: 2px 6px;
     white-space: nowrap; }
+
+  /* View-mode toggles on the left; push the export/import/download group right. */
+  .mobile-header-tools {
+    display: flex;
+    gap: 4px;
+    margin-right: auto; }
+
+  .mobile-header-tools .btn {
+    font-size: 0.95rem;
+    line-height: 1;
+    padding: 2px 8px; }
+
+  .mobile-header-tools .btn.active-toggle {
+    background: #333;
+    color: #fff; }
+
+  /* Nav collapsed: hide the bottom navigation, give the chart the whole screen. */
+  #container.nav-collapsed aside {
+    display: none; }
+
+  #container.nav-collapsed main {
+    height: 100dvh;
+    height: 100vh;
+    height: 100svh;
+    max-height: none; }
 
   /* Scroll wrapper: horizontal + vertical scroll for tall charts.
      overscroll-behavior: none prevents pull-to-refresh bounce at the top edge. */
