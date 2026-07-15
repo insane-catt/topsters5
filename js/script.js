@@ -818,7 +818,10 @@ function refreshDeleteButtons() {
     if (w <= 0) return;
     // Inset by the tile's own (inner) padding so the button sits on the cover.
     const pad = parseFloat(getComputedStyle(tile).paddingLeft) || 0;
-    const size = Math.max(13, Math.min(Math.round(w * 0.26), 30));
+    // Scale the button with the tile. The small floor keeps the button from
+    // swallowing the tiny lower-tier tiles (tile-3/tile-4) — they'd be too hard
+    // to grab for dragging otherwise; you can zoom in to tap a small button.
+    const size = Math.max(8, Math.min(Math.round(w * 0.26), 30));
     const gap = Math.max(2, Math.round(size * 0.14));
     const btn = document.createElement('button');
     btn.type = 'button';
