@@ -7852,6 +7852,25 @@ main {
 .tile-4 {
   width: 7.14286%; }
 
+/* Non-blocking "loading covers" spinner for the RYM import. Hidden until the
+   import starts (JS toggles display:flex), and pointer-events:none so it never
+   blocks interaction while covers trickle in. */
+.rym-loading {
+  display: none;
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 11000;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.82);
+  color: #ffffff;
+  font-size: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  pointer-events: none; }
+
 .tile-delete {
   position: absolute;
   z-index: 6;

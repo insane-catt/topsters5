@@ -114,7 +114,8 @@ const I18N_JA = {
   'download.png': '...PNGとして',
   // Strings built in JS
   'js.generating': '生成中...',
-  'js.genFailed': '画像の生成に失敗しました: '
+  'js.genFailed': '画像の生成に失敗しました: ',
+  'js.rymLoading': 'カバーを読み込み中…'
 };
 
 /**
@@ -1171,7 +1172,10 @@ function importFromPastedJSON() {
  * Generate chart images from RateYourMusic data
  */
 function importFromRYM() {
-  xhrGet(URL.createObjectURL($('#csvImport').get(0).files[0]), (resp) => {
+  const fileInput = $('#csvImport').get(0);
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+  showRymLoading();
+  xhrGet(URL.createObjectURL(fileInput.files[0]), (resp) => {
     // Normalize the header row instead of matching one exact string. RYM's export
     // column names contain spaces and stray leading spaces (e.g.
     // "RYM Album, First Name,Last Name,...,Media Type") and RYM keeps changing
@@ -1198,39 +1202,106 @@ function importFromRYM() {
       (chart.options.grid
         ? chart.options.rows * chart.options.cols
         : chart.options.length);
+
+    // Loading-spinner tracking. The lookups are staggered (one MusicBrainz query
+    // per second) and each may fan out to a cover-art request, so there's no
+    // single completion callback. Count the queries still waiting to fire
+    // (`scheduled`) and the requests currently in flight (`pending`); the import
+    // is done only once both reach zero. `tGet` always settles (onloadend fires
+    // on success, error, abort or timeout), so a failed request can't leave the
+    // spinner stuck, and a safety timer force-hides it as a last resort.
+    let pending = 0;
+    let scheduled = 0;
+    let finished = false;
+    let safety;
+
+    function settle() {
+      if (finished) return;
+      if (scheduled === 0 && pending === 0) {
+        finished = true;
+        if (safety) window.clearTimeout(safety);
+        hideRymLoading();
+      }
+    }
+
+    function tGet(url, onOk) {
+      pending++;
+      const http = new XMLHttpRequest();
+      http.open('GET', url);
+      http.timeout = 15000;
+      http.onloadend = function () {
+        if (http.status === 200) {
+          try { onOk(http.responseText); } catch (e) {}
+        }
+        pending--;
+        settle();
+      };
+      http.send();
+    }
+
     for (let i = 0; i < length; i++) {
+      if (!userData[i]) break;
+      scheduled++;
+    }
+    if (scheduled === 0) {
+      hideRymLoading();
+      return;
+    }
+
+    for (let i = 0; i < scheduled; i++) {
       let obj = userData[i];
-      if (!obj) break;
       let artist =
         (obj.First_Name == 0 ? '' : obj.First_Name + ' ') + obj.Last_Name;
       let query = 'release:' + obj.Title + ' AND artist:' + artist;
-      window.setTimeout(
-        xhrGet,
-        1000 * i,
-        `https://musicbrainz.org/ws/2/release?query=${query}&limit=40?inc=artist-credit&fmt=json`,
-        (resp) => {
-          let release = JSON.parse(resp).releases.find(
-            (release) => release.title == obj.Title
-          );
-          if (release) {
-            xhrGet(
-              'https://coverartarchive.org/release/' + release['id'],
-              (resp) => {
-                let index = chart.sources.indexOf('assets/images/blank.png');
-                if (index > -1 && index < 144) {
-                  chart.sources[index] = JSON.parse(resp)
-                    .images.find((img) => img.front)
-                    ['image'].replace('http:/', 'https:/');
-                  chart.titles[index] = artist + ' - ' + obj.Title;
-                }
-                repaintChart();
-              }
+      window.setTimeout(function () {
+        scheduled--;
+        tGet(
+          `https://musicbrainz.org/ws/2/release?query=${query}&limit=40?inc=artist-credit&fmt=json`,
+          (resp) => {
+            let release = JSON.parse(resp).releases.find(
+              (release) => release.title == obj.Title
             );
+            if (release) {
+              tGet(
+                'https://coverartarchive.org/release/' + release['id'],
+                (resp) => {
+                  let index = chart.sources.indexOf('assets/images/blank.png');
+                  if (index > -1 && index < 144) {
+                    chart.sources[index] = JSON.parse(resp)
+                      .images.find((img) => img.front)
+                      ['image'].replace('http:/', 'https:/');
+                    chart.titles[index] = artist + ' - ' + obj.Title;
+                  }
+                  repaintChart();
+                }
+              );
+            }
           }
-        }
-      );
+        );
+        settle();
+      }, 1000 * i);
     }
+
+    // Last resort: never leave the spinner up longer than the whole staggered
+    // schedule plus a margin for the final round-trips.
+    safety = window.setTimeout(function () {
+      finished = true;
+      hideRymLoading();
+    }, 1000 * scheduled + 30000);
   });
+}
+
+/**
+ * Show / hide the small "loading covers" spinner used by the RYM import, which
+ * fills the chart gradually over many seconds.
+ */
+function showRymLoading() {
+  const el = document.getElementById('rymLoading');
+  if (el) el.style.display = 'flex';
+}
+function hideRymLoading() {
+  const el = document.getElementById('rymLoading');
+  if (el) el.style.display = 'none';
 }
 
 /**
