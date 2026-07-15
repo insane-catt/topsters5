@@ -8069,13 +8069,14 @@ input[type=radio] {
   #container.nav-collapsed .mobile-panel {
     display: none !important; }
 
-  /* Fit mode / collapsed nav: a finger drag on a tile should start a reorder
-     immediately rather than being treated as a pan/zoom gesture. Tiles get
-     touch-action:none so the drag isn't stolen by scrolling; the chart's margins
-     (which keep the default touch-action) are still used to scroll. */
+  /* Fit mode / collapsed nav: a one-finger drag on a tile should start a reorder
+     immediately rather than scroll. touch-action:pinch-zoom disables only
+     one-finger panning (so the drag isn't stolen by scrolling) while still
+     letting a two-finger pinch zoom the page. The chart's margins keep the
+     default touch-action, so scrolling from there still works. */
   #container.fit-mode #chart img.tile,
   #container.nav-collapsed #chart img.tile {
-    touch-action: none; }
+    touch-action: pinch-zoom; }
 
   /* 4-column grid; override Bootstrap d-flex and overflow-auto */
   #results {
