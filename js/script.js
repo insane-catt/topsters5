@@ -1673,9 +1673,11 @@ function setupTileLongPressDrag() {
     startY = prevY = t.clientY;
     draggingTile = tile;
 
-    // Scroll mode: require a long-press so a normal swipe still scrolls the chart.
-    // Fit mode: no timer — the drag begins on the first move (see touchmove).
-    if (!fitMode) {
+    // Immediate-drag when the chart is the whole view (fit mode) or the nav is
+    // collapsed (full-screen chart): the drag begins on the first move (see
+    // touchmove), and scrolling is done from the chart's margins instead. In the
+    // normal split view, require a long-press so a swipe on a tile still scrolls.
+    if (!fitMode && !navCollapsed) {
       timer = setTimeout(beginDrag, LONG_PRESS_MS);
     }
   }, { passive: true });
@@ -1688,8 +1690,9 @@ function setupTileLongPressDrag() {
     if (!t) return;
 
     if (!helper) {
-      if (fitMode && draggingTile) {
-        // Fit mode: begin dragging as soon as the finger moves (nothing to scroll).
+      if ((fitMode || navCollapsed) && draggingTile) {
+        // Fit mode / collapsed nav: begin dragging as soon as the finger moves
+        // (scrolling is done from the chart's margins, not from the tiles).
         beginDrag();
         if (!helper) return;
       } else {

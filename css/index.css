@@ -8069,10 +8069,12 @@ input[type=radio] {
   #container.nav-collapsed .mobile-panel {
     display: none !important; }
 
-  /* Fit mode: the whole chart is on screen and doesn't scroll, so let a finger
-     drag on a tile start a reorder immediately instead of being treated as a
-     pan/zoom gesture by the browser. */
-  #container.fit-mode #chart img.tile {
+  /* Fit mode / collapsed nav: a finger drag on a tile should start a reorder
+     immediately rather than being treated as a pan/zoom gesture. Tiles get
+     touch-action:none so the drag isn't stolen by scrolling; the chart's margins
+     (which keep the default touch-action) are still used to scroll. */
+  #container.fit-mode #chart img.tile,
+  #container.nav-collapsed #chart img.tile {
     touch-action: none; }
 
   /* 4-column grid; override Bootstrap d-flex and overflow-auto */
