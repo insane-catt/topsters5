@@ -1641,11 +1641,18 @@ function setupTileLongPressDrag() {
     if (dragIndex < 0) { dragIndex = -1; return; }
 
     var rect = draggingTile.getBoundingClientRect();
+    // Position the helper in PAGE (document) coordinates with position:absolute,
+    // not position:fixed. When the page is pinch-zoomed, a fixed element is drawn
+    // relative to the visual viewport (glass) and drifts far from the finger,
+    // whereas an absolute element lives in layout space and stays under the finger
+    // (the same visual-viewport transform applies to it and to the touch point).
+    var sx = window.pageXOffset || document.documentElement.scrollLeft || 0;
+    var sy = window.pageYOffset || document.documentElement.scrollTop || 0;
     helper = document.createElement('img');
     helper.src = draggingTile.src;
     helper.style.cssText =
-      'position:fixed;z-index:9999;pointer-events:none;object-fit:cover;' +
-      'opacity:0.85;left:' + rect.left + 'px;top:' + rect.top + 'px;' +
+      'position:absolute;z-index:9999;pointer-events:none;object-fit:cover;' +
+      'opacity:0.85;left:' + (rect.left + sx) + 'px;top:' + (rect.top + sy) + 'px;' +
       'width:' + rect.width + 'px;height:' + rect.height + 'px;' +
       'transform:scale(1.08);transition:transform 0.12s;';
     document.body.appendChild(helper);
