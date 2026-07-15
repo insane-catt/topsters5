@@ -291,8 +291,19 @@ module.exports = async (req, res) => {
     ? await canvas.encode('jpeg', 95)
     : await canvas.encode('png');
 
+  // Content-Disposition values must be Latin-1. A chart NAME with Japanese (or
+  // any non-ASCII) characters makes res.setHeader() throw "Invalid character in
+  // header content" and 500s the whole download. Send an ASCII-only filename=
+  // fallback plus an RFC 5987 filename*= carrying the real (UTF-8) name.
+  const rawName = (chart.name || 'chart').toString();
+  const asciiName =
+    rawName.replace(/[^\x20-\x7E]/g, '_').replace(/["\\]/g, '_').trim() || 'chart';
+  const encodedName = encodeURIComponent(rawName);
   res.setHeader('Content-Type', mimeType);
-  res.setHeader('Content-Disposition', `attachment; filename="${(chart.name || 'chart')}.${ext}"`);
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="${asciiName}.${ext}"; filename*=UTF-8''${encodedName}.${ext}`
+  );
   res.status(200).end(buffer);
   } catch (err) {
     // Turn any unexpected failure into a clear 500 (and log it for the Vercel
