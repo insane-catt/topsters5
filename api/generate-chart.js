@@ -8,6 +8,12 @@ GlobalFonts.registerFromPath(
 
 const CHART_W = 2800;
 
+// Coerce possibly-string / missing option values to a finite number.
+function num(v, d) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : d;
+}
+
 function getTileWidthFraction(i, grid, cols, length) {
   if (grid) return 1 / cols;
   const tile3Start = length === 100 ? 28 : 22;
@@ -19,7 +25,15 @@ function getTileWidthFraction(i, grid, cols, length) {
 }
 
 function computeLayout(options) {
-  const { grid, rows, cols, length, outerPadding, innerPadding } = options;
+  // Sanitize: charts made by other users (or imported JSON) may carry option
+  // values as strings, be missing, or be out of range. Bad numbers here would
+  // produce a NaN/huge canvas and crash the render (500), so clamp them.
+  const grid = !!options.grid;
+  const rows = Math.min(12, Math.max(1, Math.floor(num(options.rows, 3))));
+  const cols = Math.min(12, Math.max(1, Math.floor(num(options.cols, 3))));
+  const length = Math.min(100, Math.max(1, Math.floor(num(options.length, 42))));
+  const outerPadding = Math.max(0, num(options.outerPadding, 0));
+  const innerPadding = Math.max(0, num(options.innerPadding, 0));
   const outerPad = (outerPadding * 0.2 / 100) * CHART_W;
   const tileCount = grid ? rows * cols : length;
   const contentW = CHART_W - 2 * outerPad;
@@ -92,6 +106,7 @@ module.exports = async (req, res) => {
     return;
   }
 
+  try {
   const layout = computeLayout(chart.options);
   const { positions, totalH, innerPad, tileCount, outerPad } = layout;
 
@@ -166,8 +181,10 @@ module.exports = async (req, res) => {
     }
   }
 
-  const canvasW = CHART_W + titleColW;
-  const canvasH = Math.ceil(totalH);
+  // Clamp to sane, finite dimensions so malformed option values can't ask for a
+  // gigantic (or NaN) canvas that would OOM/crash the function.
+  const canvasW = Math.min(6000, Math.max(1, Math.round(CHART_W + (Number.isFinite(titleColW) ? titleColW : 0))));
+  const canvasH = Math.min(20000, Math.max(1, Math.ceil(Number.isFinite(totalH) ? totalH : 1)));
   const canvas = createCanvas(canvasW, canvasH);
   const ctx = canvas.getContext('2d');
 
@@ -203,25 +220,41 @@ module.exports = async (req, res) => {
   // Fetch each unique URL once (with retry), then map tiles back to results.
   // Deduplication avoids hammering the same URL dozens of times.
   // Batching by CONCURRENCY prevents rate-limit failures on Cover Art Archive.
+  //
+  // Everything runs against an overall deadline: other users' charts often
+  // contain a slow, dead, or hotlink-blocked image URL, and without a global
+  // budget a single one could burn the whole 30s function limit (504). Once the
+  // budget is spent, remaining covers are simply left blank instead of failing
+  // the entire download.
+  const FETCH_DEADLINE_MS = 25000; // headroom under vercel.json maxDuration (30s)
+  const startedAt = Date.now();
+  const timeLeft = () => FETCH_DEADLINE_MS - (Date.now() - startedAt);
+
   async function fetchWithRetry(src) {
-    for (let attempt = 0; attempt <= 2; attempt++) {
-      if (attempt > 0) await new Promise(r => setTimeout(r, attempt * 1500));
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (timeLeft() <= 0) return null;
+      if (attempt > 0) {
+        await new Promise(r => setTimeout(r, Math.min(500, Math.max(0, timeLeft()))));
+      }
+      const budget = Math.min(8000, timeLeft());
+      if (budget <= 0) return null;
       try {
-        const resp = await fetch(src, { signal: AbortSignal.timeout(15000) });
+        const resp = await fetch(src, { signal: AbortSignal.timeout(budget) });
         if (!resp.ok) {
           if (resp.status === 429 || resp.status >= 500) continue;
           return null;
         }
         return await loadImage(Buffer.from(await resp.arrayBuffer()));
-      } catch (_) { /* retry */ }
+      } catch (_) { /* timed out or errored — retry if budget remains */ }
     }
     return null;
   }
 
   const uniqueUrls = [...new Set(tileSrcs.filter(Boolean))];
   const imageCache = new Map();
-  const CONCURRENCY = 6;
+  const CONCURRENCY = 10;
   for (let i = 0; i < uniqueUrls.length; i += CONCURRENCY) {
+    if (timeLeft() <= 200) break; // out of budget — the rest render blank
     const batch = uniqueUrls.slice(i, i + CONCURRENCY);
     const results = await Promise.all(batch.map(fetchWithRetry));
     results.forEach((img, j) => { if (img) imageCache.set(batch[j], img); });
@@ -261,4 +294,10 @@ module.exports = async (req, res) => {
   res.setHeader('Content-Type', mimeType);
   res.setHeader('Content-Disposition', `attachment; filename="${(chart.name || 'chart')}.${ext}"`);
   res.status(200).end(buffer);
+  } catch (err) {
+    // Turn any unexpected failure into a clear 500 (and log it for the Vercel
+    // dashboard) instead of an opaque platform crash.
+    console.error('generate-chart failed:', (err && err.stack) || err);
+    if (!res.headersSent) res.status(500).end('Chart render failed');
+  }
 };
