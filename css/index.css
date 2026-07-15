@@ -8069,6 +8069,12 @@ input[type=radio] {
   #container.nav-collapsed .mobile-panel {
     display: none !important; }
 
+  /* Fit mode: the whole chart is on screen and doesn't scroll, so let a finger
+     drag on a tile start a reorder immediately instead of being treated as a
+     pan/zoom gesture by the browser. */
+  #container.fit-mode #chart img.tile {
+    touch-action: none; }
+
   /* 4-column grid; override Bootstrap d-flex and overflow-auto */
   #results {
     display: grid !important;

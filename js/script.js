@@ -437,6 +437,7 @@ function toggleNav() {
  */
 function toggleFitMode() {
   fitMode = !fitMode;
+  document.getElementById('container').classList.toggle('fit-mode', fitMode);
   try { localStorage.setItem('mobileFitMode', fitMode ? '1' : '0'); } catch (e) {}
   updateFitButton();
   // scheduleTitleRelayout settles the titles (transform-free) then applies the fit.
@@ -1621,6 +1622,38 @@ function setupTileLongPressDrag() {
       repaintChart();
     }
     resetState();
+    // Restore the fit scaling / overflow we cleared above (also covers a plain
+    // tap in fit mode, where no drag ran and repaintChart wasn't called).
+    applyChartFit();
+  }
+
+  // Actually pick up the tile currently under the finger and create the drag
+  // helper. Called by the long-press timer (scroll mode) or immediately on the
+  // first finger movement (fit mode — nothing scrolls, so no long-press needed).
+  function beginDrag() {
+    timer = null;
+    if (!draggingTile || helper) return;
+    var tiles = document.querySelectorAll('#chart img.tile');
+    dragIndex = Array.prototype.indexOf.call(tiles, draggingTile);
+    if (dragIndex < 0) { dragIndex = -1; return; }
+
+    var rect = draggingTile.getBoundingClientRect();
+    helper = document.createElement('img');
+    helper.src = draggingTile.src;
+    helper.style.cssText =
+      'position:fixed;z-index:9999;pointer-events:none;object-fit:cover;' +
+      'opacity:0.85;left:' + rect.left + 'px;top:' + rect.top + 'px;' +
+      'width:' + rect.width + 'px;height:' + rect.height + 'px;' +
+      'transform:scale(1.08);transition:transform 0.12s;';
+    document.body.appendChild(helper);
+    setTimeout(function() { if (helper) helper.style.transform = ''; }, 140);
+
+    draggingTile.style.opacity = '0.2';
+    // Clear delete buttons so they don't intercept elementFromPoint drops.
+    refreshDeleteButtons();
+    var sw = document.getElementById('chartScrollWrapper');
+    if (sw) sw.style.overflow = 'hidden';
+    if (window.navigator.vibrate) window.navigator.vibrate(30);
   }
 
   var chartEl = document.getElementById('chart');
@@ -1637,31 +1670,11 @@ function setupTileLongPressDrag() {
     startY = prevY = t.clientY;
     draggingTile = tile;
 
-    timer = setTimeout(function() {
-      timer = null;
-      if (!draggingTile) return;
-      var tiles = document.querySelectorAll('#chart img.tile');
-      dragIndex = Array.prototype.indexOf.call(tiles, draggingTile);
-      if (dragIndex < 0) { dragIndex = -1; return; }
-
-      var rect = draggingTile.getBoundingClientRect();
-      helper = document.createElement('img');
-      helper.src = draggingTile.src;
-      helper.style.cssText =
-        'position:fixed;z-index:9999;pointer-events:none;object-fit:cover;' +
-        'opacity:0.85;left:' + rect.left + 'px;top:' + rect.top + 'px;' +
-        'width:' + rect.width + 'px;height:' + rect.height + 'px;' +
-        'transform:scale(1.08);transition:transform 0.12s;';
-      document.body.appendChild(helper);
-      setTimeout(function() { if (helper) helper.style.transform = ''; }, 140);
-
-      draggingTile.style.opacity = '0.2';
-      // Clear delete buttons so they don't intercept elementFromPoint drops.
-      refreshDeleteButtons();
-      var sw = document.getElementById('chartScrollWrapper');
-      if (sw) sw.style.overflow = 'hidden';
-      if (window.navigator.vibrate) window.navigator.vibrate(30);
-    }, LONG_PRESS_MS);
+    // Scroll mode: require a long-press so a normal swipe still scrolls the chart.
+    // Fit mode: no timer — the drag begins on the first move (see touchmove).
+    if (!fitMode) {
+      timer = setTimeout(beginDrag, LONG_PRESS_MS);
+    }
   }, { passive: true });
 
   chartEl.addEventListener('touchmove', function(e) {
@@ -1672,8 +1685,15 @@ function setupTileLongPressDrag() {
     if (!t) return;
 
     if (!helper) {
-      if (Math.hypot(t.clientX - startX, t.clientY - startY) > CANCEL_PX) resetState();
-      return;
+      if (fitMode && draggingTile) {
+        // Fit mode: begin dragging as soon as the finger moves (nothing to scroll).
+        beginDrag();
+        if (!helper) return;
+      } else {
+        // Long-press still pending: a real move cancels it so the page can scroll.
+        if (Math.hypot(t.clientX - startX, t.clientY - startY) > CANCEL_PX) resetState();
+        return;
+      }
     }
 
     var dx = t.clientX - prevX;
@@ -1750,6 +1770,7 @@ $(() => {
     fitMode = localStorage.getItem('mobileFitMode') === '1';
   } catch (e) {}
   if (navCollapsed) document.getElementById('container').classList.add('nav-collapsed');
+  if (fitMode) document.getElementById('container').classList.add('fit-mode');
   updateNavButton();
   updateFitButton();
 
