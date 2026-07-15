@@ -21,6 +21,18 @@ let dragIndex = -1;
 // Helps with fix for when there's too many titles
 let maxHeight = false;
 
+// Mobile-only view state (persisted per device). navCollapsed collapses the
+// bottom nav sheet so the chart fills the screen (the tab bar stays, like
+// Topsters 3's caret toggle). fitMode scales the whole chart down so it fits on
+// screen with no scrolling — which also makes finger-dragging tiles into place
+// easy, since the whole chart is visible at once.
+let navCollapsed = false;
+let fitMode = false;
+// True only during a jQuery-UI result drag, when fit scaling is suspended so the
+// drop lands on the tiles' true (untransformed) positions. Touch tile-reordering
+// (setupTileLongPressDrag) works fine while scaled and does NOT set this.
+let chartInteracting = false;
+
 /* ------------------------------------------------------------------ *
  * Localization (Japanese)                                            *
  *                                                                    *
@@ -165,12 +177,25 @@ function resize() {
   if (w > 0) $('.result').css({ height: w });
   updateTitlesHeight();
   refreshDeleteButtons();
+  applyChartFit();
 }
 
 function updateTitlesHeight() {
   const $titles = $('#titles');
   const titlesEl = $titles[0];
   const chartEl = document.getElementById('chart');
+  // Fit mode scales #chartContainer with a CSS transform. Strip it before
+  // measuring so every metric below is the true (unscaled) layout; applyChartFit()
+  // reapplies the scale afterwards. Never touch it mid-drag — the drag visuals
+  // (and touch reordering) rely on the current scale staying put.
+  if (dragIndex === -1 && !chartInteracting) {
+    const _c = document.getElementById('chartContainer');
+    if (_c && _c.style.transform) {
+      _c.style.transform = '';
+      _c.style.marginLeft = '';
+      _c.style.marginRight = '';
+    }
+  }
   const chartH = chartEl.offsetHeight;
   if (chartH <= 0) return;
 
@@ -301,6 +326,146 @@ function settleTitles() {
     prev = w;
   }
   refreshDeleteButtons();
+  applyChartFit();
+}
+
+/**
+ * Update the title layout and then (re)apply the fit scaling. Used by the
+ * deferred single-pass relayouts (title edits, padding, drag end).
+ */
+function relayoutAndFit() {
+  updateTitlesHeight();
+  applyChartFit();
+}
+
+/* ------------------------------------------------------------------ *
+ * Mobile view modes (narrow screens only)                            *
+ *                                                                    *
+ *  - Nav caret: collapse/expand the bottom nav sheet (the tab bar    *
+ *    stays visible; the chart takes the freed space), like the caret *
+ *    at the top-right of Topsters 3's mobile tab bar.                *
+ *  - Fit toggle: scale the whole chart to fit on screen with no      *
+ *    scrolling, vs. the default (album art fits the width, the rest  *
+ *    scrolls). Fit view stays active during touch drags so tiles can *
+ *    be rearranged on the fully-visible chart.                      *
+ * ------------------------------------------------------------------ */
+
+/**
+ * In fit mode (mobile only) scale #chartContainer so the whole chart — album art
+ * and titles — fits inside the scroll wrapper without scrolling, centred. A CSS
+ * transform is used (cheap, and it doesn't disturb the layout logic, and both
+ * getBoundingClientRect and elementFromPoint stay transform-aware so touch
+ * reordering keeps working while scaled). No-op on desktop / when fit is off.
+ * Suspended only during a jQuery-UI result drag (chartInteracting).
+ */
+function applyChartFit() {
+  const wrapper = document.getElementById('chartScrollWrapper');
+  const container = document.getElementById('chartContainer');
+  if (!wrapper || !container) return;
+
+  // Mid tile-drag: leave the current scale exactly as it is (touch reordering
+  // happens on the scaled chart and depends on positions not shifting).
+  if (dragIndex !== -1) return;
+
+  const isMobile = window.innerWidth <= 767;
+  if (!isMobile || !fitMode || chartInteracting) {
+    container.style.transform = '';
+    container.style.transformOrigin = '';
+    container.style.marginLeft = '';
+    container.style.marginRight = '';
+    // Restore scrollability only when actually leaving fit mode.
+    if (!isMobile || !fitMode) wrapper.style.overflow = '';
+    return;
+  }
+
+  // Measure natural (unscaled) size. Pin to the wrapper's left (overriding the
+  // mx-auto class) so a container wider than the wrapper — which margin:auto
+  // would left-align rather than centre — can be centred with translateX.
+  container.style.transform = '';
+  container.style.marginLeft = '0';
+  container.style.marginRight = '0';
+  const cw = container.offsetWidth;
+  const ch = container.offsetHeight;
+  const availW = wrapper.clientWidth;
+  const availH = wrapper.clientHeight;
+  if (cw <= 0 || ch <= 0 || availW <= 0 || availH <= 0) return;
+
+  const scale = Math.min(availW / cw, availH / ch, 1);
+  const tx = Math.max(0, (availW - cw * scale) / 2);
+  container.style.transformOrigin = 'top left';
+  container.style.transform = 'translateX(' + tx + 'px) scale(' + scale + ')';
+  wrapper.style.overflow = 'hidden';
+}
+
+/**
+ * Suspend fit scaling for a jQuery-UI result drag so the drop lands on the tiles'
+ * true positions (jQuery UI droppable ignores CSS transforms). Touch tile
+ * reordering does NOT use this — it works correctly while scaled.
+ */
+function beginChartInteraction() {
+  chartInteracting = true;
+  const container = document.getElementById('chartContainer');
+  const wrapper = document.getElementById('chartScrollWrapper');
+  if (container) {
+    container.style.transform = '';
+    container.style.marginLeft = '';
+    container.style.marginRight = '';
+  }
+  // Let the now full-size chart scroll so lower tiles are reachable.
+  if (wrapper && window.innerWidth <= 767 && fitMode) wrapper.style.overflow = 'auto';
+}
+
+function endChartInteraction() {
+  chartInteracting = false;
+  scheduleTitleRelayout();
+}
+
+/**
+ * Collapse / expand the bottom nav sheet on mobile (the tab bar stays visible).
+ */
+function toggleNav() {
+  navCollapsed = !navCollapsed;
+  document.getElementById('container').classList.toggle('nav-collapsed', navCollapsed);
+  try { localStorage.setItem('mobileNavCollapsed', navCollapsed ? '1' : '0'); } catch (e) {}
+  updateNavButton();
+  // The chart's available height just changed — re-settle and re-fit.
+  requestAnimationFrame(scheduleTitleRelayout);
+}
+
+/**
+ * Switch between fit-whole-chart and album-art-width + scroll on mobile.
+ */
+function toggleFitMode() {
+  fitMode = !fitMode;
+  try { localStorage.setItem('mobileFitMode', fitMode ? '1' : '0'); } catch (e) {}
+  updateFitButton();
+  // scheduleTitleRelayout settles the titles (transform-free) then applies the fit.
+  scheduleTitleRelayout();
+}
+
+function updateNavButton() {
+  const btn = document.getElementById('navToggleBtn');
+  if (!btn) return;
+  // Caret points up (▲) when collapsed = tap to open; down (▼) when open = tap to close.
+  btn.innerHTML = navCollapsed ? '&#9650;' : '&#9660;';
+  btn.setAttribute('aria-pressed', navCollapsed ? 'true' : 'false');
+  const label = IS_JA
+    ? (navCollapsed ? 'メニューを開く' : 'メニューを閉じる')
+    : (navCollapsed ? 'Open menu' : 'Close menu');
+  btn.setAttribute('aria-label', label);
+  btn.setAttribute('title', label);
+}
+
+function updateFitButton() {
+  const btn = document.getElementById('fitToggleBtn');
+  if (!btn) return;
+  btn.classList.toggle('active-toggle', fitMode);
+  btn.setAttribute('aria-pressed', fitMode ? 'true' : 'false');
+  const label = IS_JA
+    ? (fitMode ? '全体表示（オン）' : '全体表示')
+    : (fitMode ? 'Fit whole chart (on)' : 'Fit whole chart');
+  btn.setAttribute('aria-label', label);
+  btn.setAttribute('title', label);
 }
 
 /**
@@ -365,10 +530,13 @@ function makeResultDraggable(img) {
     helper: 'clone',
     scroll: false,
     start: (e, ui) => {
+      // Drop onto true tile positions (fit scaling is suspended for the drag).
+      beginChartInteraction();
       let ref = document.querySelector('.tile-3') || document.querySelector('.tile');
       let size = ref ? ref.offsetWidth : Math.round($('#chart').width() * 0.1);
       $(ui.helper).css({ width: size, height: size });
     },
+    stop: () => endChartInteraction(),
     drag: (e, ui) => {
       const r = document.getElementById('results').getBoundingClientRect();
       const hH = ui.helper.height();
@@ -482,6 +650,14 @@ async function chartToImage(ext) {
  * Switch mobile tab panels
  */
 function mobileTab(panel) {
+  // Tapping a tab also opens the nav sheet if it was collapsed (Topsters 3 behaviour).
+  if (navCollapsed) {
+    navCollapsed = false;
+    document.getElementById('container').classList.remove('nav-collapsed');
+    try { localStorage.setItem('mobileNavCollapsed', '0'); } catch (e) {}
+    updateNavButton();
+    requestAnimationFrame(scheduleTitleRelayout);
+  }
   $('.mobile-panel').removeClass('mobile-panel-active');
   $('#tab' + panel.charAt(0).toUpperCase() + panel.slice(1)).addClass('mobile-panel-active');
   $('.mobile-tab').removeClass('mobile-tab-active');
@@ -599,7 +775,7 @@ function repaintChart() {
       input.style.width = (w * 0.55 + 1) + 'em';
       $(input).change(((idx) => (e) => {
         chart.titles[idx] = e.target.value;
-        setTimeout(updateTitlesHeight, 0);
+        setTimeout(relayoutAndFit, 0);
       })(i));
       $('#titles').append(input);
     }
@@ -610,7 +786,7 @@ function repaintChart() {
     maxHeight = true;
   }
 
-  setTimeout(updateTitlesHeight, 0);
+  setTimeout(relayoutAndFit, 0);
   // After the deferred title layout settles (it can change #chart's width and
   // thus tile positions), reposition the delete buttons.
   setTimeout(refreshDeleteButtons, 0);
@@ -753,6 +929,7 @@ function generateChart() {
       zIndex: 10,
       helper: 'clone',
       start: (e, ui) => {
+        beginChartInteraction();
         $(ui.helper).css({
           width: e.target.offsetWidth,
           height: e.target.offsetHeight
@@ -764,6 +941,7 @@ function generateChart() {
         // Always fires after drop (or when dropped on a non-droppable area).
         // Reset dragIndex and inline styles, then repaint so titles are rebuilt
         // with correct order and updateTitlesHeight can set the container width.
+        chartInteracting = false;
         dragIndex = -1;
         const titlesEl = document.getElementById('titles');
         const containerEl = document.getElementById('chartContainer');
@@ -1263,7 +1441,7 @@ function outerPadding() {
   $('#chart').css({ padding: pct });
   $('#titles').css({ paddingTop: pct, paddingBottom: pct, paddingRight: pct });
   $('#outerPaddingNum').html(padding);
-  setTimeout(updateTitlesHeight, 0);
+  setTimeout(relayoutAndFit, 0);
 }
 
 /**
@@ -1565,7 +1743,18 @@ $(() => {
 
   $('#imgImportURLDiv').hide();
   $('#imgImportFileRadio').prop('checked', true);
-  window.onresize = resize;
+
+  // Restore the mobile view-mode toggles (per device).
+  try {
+    navCollapsed = localStorage.getItem('mobileNavCollapsed') === '1';
+    fitMode = localStorage.getItem('mobileFitMode') === '1';
+  } catch (e) {}
+  if (navCollapsed) document.getElementById('container').classList.add('nav-collapsed');
+  updateNavButton();
+  updateFitButton();
+
+  // On resize/orientation change, re-settle the titles and re-apply the fit.
+  window.onresize = function () { resize(); scheduleTitleRelayout(); };
 
   // Safety net: re-settle the title layout once every resource has loaded, in
   // case a late reflow nudged the sizes.

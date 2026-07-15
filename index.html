@@ -29,6 +29,22 @@
           <button class="mobile-tab" onclick="mobileTab('charts')" data-i18n="tab.charts">Charts</button>
           <button class="mobile-tab" onclick="mobileTab('options')" data-i18n="tab.options">Options</button>
           <button class="mobile-tab mobile-tab-active" onclick="mobileTab('search')" data-i18n="tab.search">Search</button>
+          <!-- Fit-whole-chart vs. album-art-width + scroll -->
+          <button
+            id="fitToggleBtn"
+            type="button"
+            class="mobile-tab mobile-tab-icon"
+            onclick="toggleFitMode()"
+            aria-pressed="false"
+          >&#10530;</button>
+          <!-- Collapse / expand the nav sheet (caret, like Topsters 3) -->
+          <button
+            id="navToggleBtn"
+            type="button"
+            class="mobile-tab mobile-tab-icon"
+            onclick="toggleNav()"
+            aria-pressed="false"
+          >&#9660;</button>
         </div>
 
         <!-- Charts Panel (desktop sidebar + mobile panel) -->

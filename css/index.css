@@ -8028,6 +8028,22 @@ input[type=radio] {
     color: white;
     border-bottom: 2px solid white; }
 
+  /* Right-aligned icon tabs (fit toggle + nav collapse caret). Fixed width so
+     the three text tabs share the remaining space. */
+  .mobile-tab-icon {
+    flex: 0 0 40px;
+    font-size: 1rem;
+    line-height: 1;
+    color: rgba(255,255,255,0.7);
+    border-bottom: 2px solid transparent; }
+
+  #fitToggleBtn {
+    /* a subtle divider between the text tabs and the icon tabs */
+    border-left: 1px solid rgba(255,255,255,0.15); }
+
+  .mobile-tab-icon.active-toggle {
+    color: white; }
+
   /* Panel is the scroll container — block display, not flex */
   .mobile-panel {
     display: none;
@@ -8038,6 +8054,20 @@ input[type=radio] {
 
   .mobile-panel.mobile-panel-active {
     display: block; }
+
+  /* Nav collapsed: hide the panel body, keep the tab bar; the chart takes the
+     freed space (the aside shrinks to just the tab bar). */
+  #container.nav-collapsed main {
+    height: auto;
+    max-height: none;
+    flex: 1 1 auto; }
+
+  #container.nav-collapsed aside {
+    height: auto;
+    flex: 0 0 auto; }
+
+  #container.nav-collapsed .mobile-panel {
+    display: none !important; }
 
   /* 4-column grid; override Bootstrap d-flex and overflow-auto */
   #results {
