@@ -22,20 +22,25 @@ Contributions are welcome! If you find a bug or have an idea for a new feature, 
 
 ## Changes from the original / 変更点
 
-- **Mobile scroll / モバイルスクロール**: Swipe anywhere in the chart area to scroll — tiles no longer capture the gesture. チャートエリアをスワイプするとスクロールできます。タイルがジェスチャーを横取りしません。
-- **Long-press drag on mobile / 長押しドラッグ**: Hold a tile for ~400ms to pick it up and drag it to a new position; a quick swipe scrolls instead. タイルを約400ms長押しするとドラッグで並び替えられます。素早いスワイプはスクロールになります。
-- **Vertical scroll for large charts / 縦スクロール対応**: Charts with many tiles scroll vertically within the chart area without resizing the layout. タイル数が多いチャートはレイアウトを崩さず縦スクロールできます。
+- **Mobile support / モバイル対応**: The UI has been made responsive so charts can be created and edited on smartphones and tablets. スマートフォンやタブレットでもチャートを作成・編集できるように、UI をレスポンシブ対応にしました。
+- **Last.fm search / Last.fm 検索**: The search engine has been switched to use Last.fm. 検索エンジンを Last.fm を使用するものに変更しました。
 - **100-tile collage layout / 100枚コラージュレイアウト**: Tile size tiers are tuned for 100-tile charts so each tier spans a consistent number of rows. 100枚設定時のタイルサイズ段階を調整し、各サイズが均等な行数になるようにしました。
+
 
 ---
 
-## Importing from RateYourMusic
+## Importing from RateYourMusic / RateYourMusic からのインポート
 
-The RYM import functionality can be a little tricky to work with (blame them for it). These steps should help you figure out what to do:
+RYM now downloads your data as a CSV file directly, so importing is simple:
 
-1. Go to the bottom of your RYM profile and click the "Export your data" button.
-2. Press CTRL+A CTRL+C to copy all of the text.
-3. Create a file on your computer named "rym.csv" and paste the text in it.
-4. Go to Import->from RateYourMusic and select the file.
+1. Go to the bottom of your RYM profile and click the "Export your data" button. A CSV file will be downloaded automatically.
+2. Go to Import->from RateYourMusic and select the downloaded CSV file.
 
 You should see covers for your top rated albums start to load up. You may have to rearrange things or replace a couple covers but it should at least save you some time searching.
+
+RYM の仕様が変わり、データが CSV ファイルとして直接ダウンロードされるようになったため、インポートは簡単です。
+
+1. RYM プロフィールページの一番下にある「Export your data」ボタンをクリックします。CSV ファイルが自動的にダウンロードされます。
+2. Import → from RateYourMusic を開き、ダウンロードした CSV ファイルを選択します。
+
+高評価のアルバムのカバー画像が読み込まれ始めるはずです。並べ替えたり、いくつかのカバーを差し替えたりする必要があるかもしれませんが、少なくとも検索の手間は省けるはずです。
