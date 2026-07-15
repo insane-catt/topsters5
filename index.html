@@ -349,14 +349,93 @@
       <main class="p-4 flex-grow-1">
         <header class="d-flex flex-row justify-content-end mb-4">
           <!-- Export Button -->
-          <button
-            id="exportJSON"
-            class="btn btn-light rounded-0 mr-2"
-            onclick="exportToJSON()"
-            data-i18n="header.export"
+          <div class="dropdown">
+            <button
+              class="btn btn-light rounded-0 mr-2 dropdown-toggle"
+              id="exportJSON"
+              data-toggle="dropdown"
+              aria-haspopup="true"
+              aria-expanded="false"
+              data-i18n="header.export"
+            >
+              Export to JSON
+            </button>
+            <ul
+              class="dropdown-menu dropdown-menu-right"
+              aria-labelledby="exportJSON"
+            >
+              <li
+                class="dropdown-item"
+                onclick="exportToJSON()"
+                data-i18n="export.file"
+              >
+                ...as file
+              </li>
+              <li
+                class="dropdown-item"
+                data-toggle="modal"
+                data-target="#jsonViewModal"
+                onclick="showRawJSON()"
+                data-i18n="export.raw"
+              >
+                ...show in browser
+              </li>
+            </ul>
+          </div>
+
+          <!-- JSON View Modal (for in-app browsers that block downloads) -->
+          <div
+            class="modal fade"
+            id="jsonViewModal"
+            tabindex="-1"
+            role="dialog"
+            aria-labelledby="jsonViewModal"
+            aria-hidden="true"
           >
-            Export to JSON
-          </button>
+            <div class="modal-dialog modal-lg" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" data-i18n="modal.jsonViewTitle">Chart JSON</h5>
+                  <button
+                    class="close"
+                    data-dismiss="modal"
+                    aria-label="Close"
+                  >
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <p class="small text-muted mb-2" data-i18n="modal.jsonViewHint">
+                    Select all and copy this text to save your chart.
+                  </p>
+                  <textarea
+                    id="jsonViewText"
+                    class="w-100"
+                    rows="14"
+                    readonly
+                    onclick="this.select()"
+                  ></textarea>
+                </div>
+                <div class="modal-footer">
+                  <button
+                    id="jsonCopyBtn"
+                    class="btn btn-light text-dark rounded-0"
+                    onclick="copyRawJSON()"
+                    data-i18n="btn.copy"
+                  >
+                    Copy
+                  </button>
+                  <button
+                    class="btn btn-light text-dark rounded-0"
+                    data-dismiss="modal"
+                    data-i18n="btn.close"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <!-- Import Button -->
           <div class="dropdown">

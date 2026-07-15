@@ -68,6 +68,12 @@ const I18N_JA = {
   'header.export': 'JSONにエクスポート',
   'header.import': 'インポート',
   'header.download': 'ダウンロード',
+  'export.file': '...ファイルとして',
+  'export.raw': '...ブラウザ内に表示',
+  'modal.jsonViewTitle': 'チャートのJSON',
+  'modal.jsonViewHint': 'このテキストを全選択してコピーすると、チャートを保存できます。',
+  'btn.copy': 'コピー',
+  'btn.close': '閉じる',
   'import.json': '...JSONから',
   'import.rym': '...RateYourMusicから',
   'import.customImage': '...カスタム画像から',
@@ -890,6 +896,42 @@ function exportToJSON() {
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
+  }
+}
+
+/**
+ * Show the current chart's JSON in a modal so it can be copied by hand.
+ * In-app browsers (LINE, Instagram, etc.) block blob downloads, so the file
+ * export silently does nothing there — this gives a copy-paste fallback.
+ */
+function showRawJSON() {
+  const el = document.getElementById('jsonViewText');
+  if (el) el.value = JSON.stringify(chart, null, 2);
+}
+
+/**
+ * Copy the shown JSON to the clipboard (with visual feedback).
+ */
+function copyRawJSON() {
+  const el = document.getElementById('jsonViewText');
+  if (!el) return;
+  el.focus();
+  el.select();
+  el.setSelectionRange(0, el.value.length); // iOS needs an explicit range
+
+  let copied = false;
+  try {
+    copied = document.execCommand('copy'); // works in in-app browsers
+  } catch (_) { /* ignore */ }
+  if (!copied && navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(el.value).catch(() => {});
+  }
+
+  const btn = document.getElementById('jsonCopyBtn');
+  if (btn) {
+    const orig = btn.textContent;
+    btn.textContent = IS_JA ? 'コピーしました' : 'Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
   }
 }
 
