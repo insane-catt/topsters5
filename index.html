@@ -464,6 +464,14 @@
               <li
                 class="dropdown-item"
                 data-toggle="modal"
+                data-target="#jsonPasteModal"
+                data-i18n="import.paste"
+              >
+                ...from pasted JSON
+              </li>
+              <li
+                class="dropdown-item"
+                data-toggle="modal"
                 data-target="#rymImportModal"
                 data-i18n="import.rym"
               >
@@ -526,6 +534,59 @@
                     class="btn btn-light text-dark rounded-0"
                     onclick="importFromJSON()"
                     data-dismiss="modal"
+                    data-i18n="btn.import"
+                  >
+                    Import
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Paste JSON Import Modal (for in-app browsers that block file pickers) -->
+          <div
+            class="modal fade"
+            id="jsonPasteModal"
+            tabindex="-1"
+            role="dialog"
+            aria-labelledby="jsonPasteModal"
+            aria-hidden="true"
+          >
+            <div class="modal-dialog modal-lg" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" data-i18n="modal.jsonPasteTitle">Paste JSON</h5>
+                  <button
+                    class="close"
+                    data-dismiss="modal"
+                    aria-label="Close"
+                    onClick="storeToJSON()"
+                  >
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <p class="small text-muted mb-2" data-i18n="modal.jsonPasteHint">
+                    Paste the exported chart JSON here.
+                  </p>
+                  <textarea
+                    id="jsonPasteText"
+                    class="w-100"
+                    rows="14"
+                    placeholder="{ ... }"
+                  ></textarea>
+                </div>
+                <div class="modal-footer">
+                  <button
+                    class="btn btn-light text-dark rounded-0"
+                    data-dismiss="modal"
+                    data-i18n="btn.cancel"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    class="btn btn-light text-dark rounded-0"
+                    onclick="importFromPastedJSON()"
                     data-i18n="btn.import"
                   >
                     Import

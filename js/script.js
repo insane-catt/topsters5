@@ -75,6 +75,9 @@ const I18N_JA = {
   'btn.copy': 'コピー',
   'btn.close': '閉じる',
   'import.json': '...JSONから',
+  'import.paste': '...貼り付けたJSONから',
+  'modal.jsonPasteTitle': 'JSONを貼り付け',
+  'modal.jsonPasteHint': 'エクスポートしたチャートのJSONをここに貼り付けてください。',
   'import.rym': '...RateYourMusicから',
   'import.customImage': '...カスタム画像から',
   'import.lastfm': '...Last.fmから',
@@ -946,6 +949,40 @@ function importFromJSON() {
     );
     loadChart(charts.length - 1);
   });
+}
+
+/**
+ * Import chart data from pasted JSON text (counterpart to the "show JSON in
+ * browser" export). Lets people move charts in in-app browsers that block both
+ * file downloads and file pickers.
+ */
+function importFromPastedJSON() {
+  const raw = ($('#jsonPasteText').val() || '').trim();
+  if (!raw) {
+    alert(IS_JA ? 'JSONを貼り付けてください。' : 'Please paste some JSON.');
+    return;
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (_) {
+    alert(IS_JA ? 'JSONの形式が正しくありません。' : 'That is not valid JSON.');
+    return;
+  }
+  // Basic shape check so a random JSON blob can't corrupt the chart list.
+  if (!parsed || !parsed.options || !Array.isArray(parsed.sources)) {
+    alert(
+      IS_JA
+        ? 'チャートのJSONではないようです。'
+        : 'This does not look like chart JSON.'
+    );
+    return;
+  }
+  charts.push(parsed);
+  $(chartItemString(charts[charts.length - 1].name)).insertBefore('#createChart');
+  loadChart(charts.length - 1);
+  $('#jsonPasteText').val('');
+  $('#jsonPasteModal').modal('hide');
 }
 
 /**
