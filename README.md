@@ -33,14 +33,14 @@ Contributions are welcome! If you find a bug or have an idea for a new feature, 
 
 RYM now downloads your data as a CSV file directly, so importing is simple:
 
-1. Go to the bottom of your RYM profile and click the "Export your data" button. A CSV file will be downloaded automatically.
+1. Go to the bottom of your RYM profile and click the "Export your music catalog" button. A CSV file will be downloaded automatically.
 2. Go to Import->from RateYourMusic and select the downloaded CSV file.
 
 You should see covers for your top rated albums start to load up. You may have to rearrange things or replace a couple covers but it should at least save you some time searching.
 
 RYM の仕様が変わり、データが CSV ファイルとして直接ダウンロードされるようになったため、インポートは簡単です。
 
-1. RYM プロフィールページの一番下にある「Export your data」ボタンをクリックします。CSV ファイルが自動的にダウンロードされます。
+1. RYM プロフィールページの一番下にある「Export your music catalog」ボタンをクリックします。CSV ファイルが自動的にダウンロードされます。
 2. Import → from RateYourMusic を開き、ダウンロードした CSV ファイルを選択します。
 
 高評価のアルバムのカバー画像が読み込まれ始めるはずです。並べ替えたり、いくつかのカバーを差し替えたりする必要があるかもしれませんが、少なくとも検索の手間は省けるはずです。

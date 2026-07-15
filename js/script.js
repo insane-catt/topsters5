@@ -1172,11 +1172,25 @@ function importFromPastedJSON() {
  */
 function importFromRYM() {
   xhrGet(URL.createObjectURL($('#csvImport').get(0).files[0]), (resp) => {
+    // Normalize the header row instead of matching one exact string. RYM's export
+    // column names contain spaces and stray leading spaces (e.g.
+    // "RYM Album, First Name,Last Name,...,Media Type") and RYM keeps changing
+    // them (the trailing "Review" column was removed). Trimming each name and
+    // turning spaces into underscores gives stable keys (First_Name, Last_Name,
+    // Title, Rating, ...) regardless of those tweaks.
+    const nl = resp.indexOf('\n');
+    if (nl > -1) {
+      const header = resp
+        .slice(0, nl)
+        .split(',')
+        .map((h) => h.trim().replace(/\s+/g, '_'))
+        .join(',');
+      resp = header + resp.slice(nl);
+    }
+    // Empty quoted fields ("") -> 0 so the First_Name == 0 test and the Rating
+    // sort behave (matches the original behaviour).
     resp = resp.replace(/""/g, '0');
-    resp = resp.replace(
-      'RYM Album, First Name,Last Name,First Name localized, Last Name localized,Title,Release_Date,Rating,Ownership,Purchase Date,Media Type,Review',
-      'RYM_Album,First_Name,Last_Name,First_Name_Localized,Last_Name_Localized,Title,Release_Date,Rating,Ownership,Purchase_Date,Media_Type,Review'
-    );
+
     let userData = $.csv.toObjects(resp);
     userData = userData.sort((obj1, obj2) => obj2.Rating - obj1.Rating);
     let length =
@@ -1186,6 +1200,7 @@ function importFromRYM() {
         : chart.options.length);
     for (let i = 0; i < length; i++) {
       let obj = userData[i];
+      if (!obj) break;
       let artist =
         (obj.First_Name == 0 ? '' : obj.First_Name + ' ') + obj.Last_Name;
       let query = 'release:' + obj.Title + ' AND artist:' + artist;
