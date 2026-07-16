@@ -7979,7 +7979,19 @@ input[type=radio] {
     height: 100vh;
     height: 100svh;
     height: var(--app-height, 100svh);
+    /* Override the global "#container { min-height: 100vh }": on iOS Safari 100vh
+       is the LARGE viewport (toolbar excluded), so that minimum forced the app
+       taller than the screen and the whole page scrolled, pushing the bottom tab
+       bar out of reach. Clamp it to the real height above instead. */
+    min-height: 0;
     overflow: hidden; }
+
+  /* The app shell is fixed-height; only the chart and nav panel scroll (their
+     own overflow containers). Lock page scrolling so the bottom tab bar can't be
+     pushed out of reach. */
+  html, body {
+    overflow: hidden;
+    overscroll-behavior: none; }
 
   main {
     order: 1;
