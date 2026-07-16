@@ -7926,11 +7926,17 @@ main {
   background-color: white;
   color: black;
   margin-bottom: 15px;
-  padding: 15px; }
+  padding: 15px;
+  /* Keep the row within the panel on narrow (mobile) widths. */
+  max-width: 100%; }
   .chart-item input:disabled {
     background: transparent;
     border: none;
     color: black; }
+  /* The name field is flex-grow; min-width:0 lets it shrink below the browser's
+     default text-input width so the row fits instead of overflowing to the right. */
+  .chart-item input[type=text] {
+    min-width: 0; }
   .chart-item:last-child {
     margin-bottom: 0; }
 
