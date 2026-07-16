@@ -8083,7 +8083,14 @@ input[type=radio] {
     display: flex;
     flex-shrink: 0;
     background: #1a1a2e;
-    border-bottom: 1px solid rgba(255,255,255,0.15); }
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    /* The tabs share the width and don't scroll; block horizontal swipe/pan on
+       them (allow only vertical) so a sideways drag over the tabs doesn't
+       trigger a horizontal scroll or the browser's back-swipe. Taps are
+       unaffected. */
+    touch-action: pan-y;
+    overflow-x: hidden;
+    overscroll-behavior: none; }
 
   .mobile-tab {
     flex: 1;
