@@ -485,8 +485,8 @@ function updateDragModeIndicator() {
   el.classList.toggle('is-drag', dragMode);
   const icon = el.querySelector('.dmi-icon');
   const text = el.querySelector('.dmi-text');
-  // Drag-handle grip (⠿) for rearrange, up/down arrow (↕) for scroll.
-  if (icon) icon.innerHTML = dragMode ? '&#10303;' : '&#8597;';
+  // Drag-handle grip (⠿) for rearrange, left/right arrow (↔) for scroll.
+  if (icon) icon.innerHTML = dragMode ? '&#10303;' : '&#8596;';
   if (text) {
     text.textContent = dragMode
       ? (IS_JA ? '並べ替え' : 'Drag')
