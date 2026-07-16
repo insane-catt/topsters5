@@ -489,8 +489,8 @@ function updateDragModeIndicator() {
   if (icon) icon.innerHTML = dragMode ? '&#10303;' : '&#8596;';
   if (text) {
     text.textContent = dragMode
-      ? (IS_JA ? '並べ替え' : 'Drag')
-      : (IS_JA ? 'スクロール' : 'Scroll');
+      ? (IS_JA ? '並べ替えモード' : 'Drag mode')
+      : (IS_JA ? 'スクロールモード' : 'Scroll mode');
   }
 }
 

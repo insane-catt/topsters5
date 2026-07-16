@@ -7993,14 +7993,15 @@ input[type=radio] {
     position: relative; }
 
   /* Persistent badge showing whether a one-finger touch on a tile rearranges
-     (drag mode: fit mode or collapsed nav) or scrolls the chart. Sits in the
-     empty top-left of the chart area and never intercepts touches. */
+     (drag mode: fit mode or collapsed nav) or scrolls the chart. Pinned to the
+     bottom-left of the chart area (clear of the header buttons) and never
+     intercepts touches. */
   .drag-mode-indicator {
     display: inline-flex;
     align-items: center;
     gap: 5px;
     position: absolute;
-    top: 10px;
+    bottom: 10px;
     left: 10px;
     z-index: 7;
     padding: 3px 9px;
