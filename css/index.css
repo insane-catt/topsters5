@@ -7986,7 +7986,8 @@ input[type=radio] {
     max-height: 65vh;
     max-height: 65svh;
     overflow: hidden;
-    padding: 4px 0 0 0;
+    /* viewport-fit=cover draws under the status bar / notch, so inset the top. */
+    padding: calc(4px + env(safe-area-inset-top, 0px)) 0 0 0;
     display: flex;
     flex-direction: column;
     /* Anchor for the absolutely-positioned drag-vs-scroll badge. */
@@ -8019,12 +8020,6 @@ input[type=radio] {
   .drag-mode-indicator .dmi-icon {
     font-size: 0.85rem;
     line-height: 1; }
-
-  /* When the nav is collapsed the chart fills to the bottom, where a mobile
-     browser's own bottom toolbar can overlap the badge. Lift it clear of that
-     bar (and any home-indicator safe area). */
-  #container.nav-collapsed .drag-mode-indicator {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 56px); }
 
   main header {
     flex-shrink: 0;
@@ -8104,13 +8099,16 @@ input[type=radio] {
   .mobile-tab-icon.active-toggle {
     color: white; }
 
-  /* Panel is the scroll container — block display, not flex */
+  /* Panel is the scroll container — block display, not flex. When the nav is
+     open the panel is the bottom-most element, so inset its bottom by the
+     safe area too. */
   .mobile-panel {
     display: none;
     overflow-y: scroll;
     -webkit-overflow-scrolling: touch;
     flex: 1;
-    min-height: 0; }
+    min-height: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px); }
 
   .mobile-panel.mobile-panel-active {
     display: block; }
@@ -8125,6 +8123,13 @@ input[type=radio] {
   #container.nav-collapsed aside {
     height: auto;
     flex: 0 0 auto; }
+
+  /* When collapsed, the tab bar is the bottom-most element and sits against the
+     device edge, where the OS/browser bottom bar (home indicator, gesture/nav
+     bar) can cover its buttons. Pad it by the safe-area inset so the tabs stay
+     tappable; the bar's own background fills the added space. */
+  #container.nav-collapsed #mobileTabBar {
+    padding-bottom: env(safe-area-inset-bottom, 0px); }
 
   #container.nav-collapsed .mobile-panel {
     display: none !important; }
