@@ -495,6 +495,25 @@ function updateDragModeIndicator() {
 }
 
 /**
+ * Size the app to the actually-visible viewport height.
+ *
+ * On iOS Safari the bottom toolbar overlaps a 100vh/100svh container and hides
+ * the bottom tab bar, and the toolbar is not part of any safe-area inset, so CSS
+ * alone can't avoid it. window.visualViewport.height is the real visible height
+ * (toolbar excluded); publish it as --app-height for #container to use. Skipped
+ * while pinch-zoomed (scale > 1), where visualViewport.height shrinks to the
+ * zoomed region and would otherwise collapse the layout.
+ */
+function setAppHeight() {
+  const vv = window.visualViewport;
+  if (vv && vv.scale > 1.01) return;
+  const h = Math.round((vv && vv.height) || window.innerHeight);
+  if (h > 0) {
+    document.documentElement.style.setProperty('--app-height', h + 'px');
+  }
+}
+
+/**
  * Settle the title layout after the next paint (debounced, skipped mid-drag).
  * Used from load/resize/import paths.
  */
@@ -1899,8 +1918,15 @@ $(() => {
   updateFitButton();
   updateDragModeIndicator();
 
+  // Track the visible viewport height so the bottom tab bar clears iOS Safari's
+  // overlapping toolbar (see setAppHeight).
+  setAppHeight();
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', setAppHeight);
+  }
+
   // On resize/orientation change, re-settle the titles and re-apply the fit.
-  window.onresize = function () { resize(); scheduleTitleRelayout(); };
+  window.onresize = function () { setAppHeight(); resize(); scheduleTitleRelayout(); };
 
   // Safety net: re-settle the title layout once every resource has loaded, in
   // case a late reflow nudged the sizes.
