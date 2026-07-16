@@ -8020,6 +8020,12 @@ input[type=radio] {
     font-size: 0.85rem;
     line-height: 1; }
 
+  /* When the nav is collapsed the chart fills to the bottom, where a mobile
+     browser's own bottom toolbar can overlap the badge. Lift it clear of that
+     bar (and any home-indicator safe area). */
+  #container.nav-collapsed .drag-mode-indicator {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 56px); }
+
   main header {
     flex-shrink: 0;
     /* Center so the plain Export button (a direct flex child) isn't stretched
