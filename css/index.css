@@ -7871,6 +7871,11 @@ main {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
   pointer-events: none; }
 
+/* Drag-vs-scroll badge is a mobile-only affordance; hidden on desktop, where
+   album art is always mouse-draggable. Shown inside the mobile media query. */
+.drag-mode-indicator {
+  display: none; }
+
 .tile-delete {
   position: absolute;
   z-index: 6;
@@ -7983,7 +7988,36 @@ input[type=radio] {
     overflow: hidden;
     padding: 4px 0 0 0;
     display: flex;
-    flex-direction: column; }
+    flex-direction: column;
+    /* Anchor for the absolutely-positioned drag-vs-scroll badge. */
+    position: relative; }
+
+  /* Persistent badge showing whether a one-finger touch on a tile rearranges
+     (drag mode: fit mode or collapsed nav) or scrolls the chart. Sits in the
+     empty top-left of the chart area and never intercepts touches. */
+  .drag-mode-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 7;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    line-height: 1.4;
+    color: #ffffff;
+    background-color: rgba(90, 96, 110, 0.9);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    pointer-events: none; }
+
+  .drag-mode-indicator.is-drag {
+    background-color: rgba(38, 166, 91, 0.92); }
+
+  .drag-mode-indicator .dmi-icon {
+    font-size: 0.85rem;
+    line-height: 1; }
 
   main header {
     flex-shrink: 0;

@@ -429,6 +429,7 @@ function toggleNav() {
   document.getElementById('container').classList.toggle('nav-collapsed', navCollapsed);
   try { localStorage.setItem('mobileNavCollapsed', navCollapsed ? '1' : '0'); } catch (e) {}
   updateNavButton();
+  updateDragModeIndicator();
   // The chart's available height just changed — re-settle and re-fit.
   requestAnimationFrame(scheduleTitleRelayout);
 }
@@ -441,6 +442,7 @@ function toggleFitMode() {
   document.getElementById('container').classList.toggle('fit-mode', fitMode);
   try { localStorage.setItem('mobileFitMode', fitMode ? '1' : '0'); } catch (e) {}
   updateFitButton();
+  updateDragModeIndicator();
   // scheduleTitleRelayout settles the titles (transform-free) then applies the fit.
   scheduleTitleRelayout();
 }
@@ -468,6 +470,28 @@ function updateFitButton() {
     : (fitMode ? 'Fit whole chart (on)' : 'Fit whole chart');
   btn.setAttribute('aria-label', label);
   btn.setAttribute('title', label);
+}
+
+/**
+ * Keep the persistent "drag vs scroll" badge in sync. A one-finger touch on a
+ * tile rearranges it immediately in fit mode or when the nav is collapsed
+ * (see setupTileLongPressDrag); otherwise a swipe scrolls the chart and a
+ * long-press is needed to rearrange.
+ */
+function updateDragModeIndicator() {
+  const el = document.getElementById('dragModeIndicator');
+  if (!el) return;
+  const dragMode = fitMode || navCollapsed;
+  el.classList.toggle('is-drag', dragMode);
+  const icon = el.querySelector('.dmi-icon');
+  const text = el.querySelector('.dmi-text');
+  // Drag-handle grip (⠿) for rearrange, up/down arrow (↕) for scroll.
+  if (icon) icon.innerHTML = dragMode ? '&#10303;' : '&#8597;';
+  if (text) {
+    text.textContent = dragMode
+      ? (IS_JA ? '並べ替え' : 'Drag')
+      : (IS_JA ? 'スクロール' : 'Scroll');
+  }
 }
 
 /**
@@ -658,6 +682,7 @@ function mobileTab(panel) {
     document.getElementById('container').classList.remove('nav-collapsed');
     try { localStorage.setItem('mobileNavCollapsed', '0'); } catch (e) {}
     updateNavButton();
+    updateDragModeIndicator();
     requestAnimationFrame(scheduleTitleRelayout);
   }
   $('.mobile-panel').removeClass('mobile-panel-active');
@@ -1872,6 +1897,7 @@ $(() => {
   if (fitMode) document.getElementById('container').classList.add('fit-mode');
   updateNavButton();
   updateFitButton();
+  updateDragModeIndicator();
 
   // On resize/orientation change, re-settle the titles and re-apply the fit.
   window.onresize = function () { resize(); scheduleTitleRelayout(); };
